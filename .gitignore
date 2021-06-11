@@ -1,2 +1,5 @@
 /glew-2.1.0-win32/
 /GLFW/
+
+cmake-build-debug
+.idea
