@@ -1,141 +1,129 @@
-#include <iostream>
+#include "opencv2/imgproc.hpp"
+#include "opencv2/highgui.hpp"
+#include <numeric>
 
-#include <iostream>
+using namespace cv;
+const int max_value_H = 360 / 2;
+const int max_value = 255;
+const String window_capture_name = "Video Capture";
+const String window_detection_name = "Object Detection";
 
-#undef GLFW_DLL
 
-#include <GL/glew.h>
-#include <GL/GL.h>
-#include <GL/GLU.h>
-#include <GLFW/glfw3.h>
-#include <cstdlib>
-#include <iostream>
-
-using namespace std;
-
-void render(GLFWwindow *win) {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
-    glfwSwapBuffers(win);
-    glfwPollEvents();
+Mat threshholdWithAdaptative(Mat frame) {
+    Mat out;
+    cvtColor(frame, out, COLOR_BGR2GRAY);
+    adaptiveThreshold(out, out, 255, ADAPTIVE_THRESH_GAUSSIAN_C, THRESH_BINARY, 13, 5);
+    return out;
 }
 
-static unsigned int compileShader(const std::string &source, unsigned int type) {
-    unsigned int id = glCreateShader(type);
-    const char *src = source.c_str();
-    glShaderSource(id, 1, &src, nullptr);
-    glCompileShader(id);
-    //TODO : Error handling
 
-    int result;
-    glGetShaderiv(id, GL_COMPILE_STATUS, &result);
-    if (result == GL_FALSE) {
-        int length;
-        glGetShaderiv(id, GL_INFO_LOG_LENGTH, &length);
-        char *message = (char *) alloca(length * sizeof(char));
-        glGetShaderInfoLog(id, length, &length, message);
-        std::cout << "FAILED TO COMPILE SHADER!" << std::endl;
-        std::cout << message << std::endl;
-        glDeleteShader(id);
-        return 0;
-    }
-
-    return id;
+Mat threshholdWithHSV(Mat frame) {
+    Mat frame_HSV;
+    Mat frame_threshold;
+    cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
+    int low_H = 10, low_S = 0, low_V = 200;
+    int high_H = max_value_H, high_S = max_value, high_V = max_value;
+    inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
+    return frame_threshold;
 }
 
-static int createShader(const std::string &vertexShader, const std::string &fragmentShader) {
-    unsigned int program = glCreateProgram();
-    unsigned int vs = compileShader(vertexShader, GL_VERTEX_SHADER);
-    unsigned int fs = compileShader(fragmentShader, GL_FRAGMENT_SHADER);
-
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-    glValidateProgram(program);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    return program;
+std::vector<std::vector<Point>> getApproxContours(Mat processedFrame) {
+    std::vector<std::vector<Point>> approxContours;
+    std::vector<std::vector<Point> > contours;
+    std::vector<Vec4i> hierarchy;
+    findContours(processedFrame, contours, hierarchy, RETR_TREE, CHAIN_APPROX_SIMPLE);
+    for (int i = 0; i < contours.size(); i++) {
+        std::vector<Point> approx_contour;
+        approxPolyDP(contours[i], approx_contour, arcLength(contours[i], true) * 0.02, true);
+        if (approx_contour.size() > 2 && contourArea(approx_contour) > 500) {
+            approxContours.push_back(contours[i]);
+        }
+    }
+    return approxContours;
 }
 
-void onResize(GLFWwindow* window, int width, int height)
-{
-    glViewport(0,0,width,height);
+void colorPianoKeys(Mat frame, std::vector<std::vector<Point>> contours) {
+    for (int i = 0; i < contours.size(); i++) {
+        drawContours(frame, contours, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED);
+    }
 }
 
-int main() {
-    if (!glfwInit()) {
-        cerr << "Can't initialize GLFW" << endl;
-        exit(EXIT_FAILURE);
+std::vector<double> getAreas(std::vector<std::vector<Point>> contours) {
+    std::vector<double> areas(contours.size());
+    for (int i = 0; i < contours.size(); i++) {
+        areas.push_back(contourArea(contours[i]));
     }
+    return areas;
+}
 
-    GLFWwindow *win;
-    win = glfwCreateWindow(450, 300, "Hello", NULL, NULL);
-    glfwMakeContextCurrent(win);
+double getAverageArea(std::vector<double> areas) {
+    return std::accumulate(areas.begin(), areas.end(), 0.0) / areas.size();
+}
 
-    auto result = glewInit();
-    if (result != GLEW_OK) {
-        cerr << "Can't initalize GLEW" << result << endl;
+double getAreaStdDev(std::vector<double> areas) {
+    double mean = getAverageArea(areas);
+    double sq_sum = std::inner_product(areas.begin(), areas.end(), areas.begin(), 0.0);
+    double stdev = std::sqrt(sq_sum / areas.size() - mean * mean);
+    return stdev;
+}
+
+std::vector<std::vector<Point>>
+getContoursWithAreaCloseWithinMean(std::vector<std::vector<Point>> in, double mean, double stdev) {
+    std::vector<std::vector<Point>> out;
+    for (const auto &item : in) {
+        if (abs(contourArea(item) - mean) < stdev / 2) {
+            out.push_back(item);
+        }
     }
+    return out;
+}
 
-    float positions[8] =
-            {
-                    -0.5f, -0.5f,
-                    0.5f, -0.5f,
-                    0.5f, 0.5f,
-                    -0.5f, 0.5f
-            };
-    unsigned int buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 8 * sizeof(float), positions, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, nullptr);
-    glEnableVertexAttribArray(0);
-
-    unsigned int indices[] = {
-            0, 1, 2,
-            0, 2, 3
-    };
-
-    unsigned int indexBuffer;
-    glGenBuffers(1, &indexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 6 * sizeof(unsigned int), indices, GL_STATIC_DRAW);
-
-
-    std::string vertexShader =
-            "#version 330 core\n"
-            "layout(location = 0) in vec4 position;\n"
-            "\n"
-            "void main()\n"
-            "{\n"
-            "gl_Position = position;\n"
-            "}\n";
-
-    std::string fragmentShader =
-            "#version 330 core\n"
-            "layout(location = 0) out vec4 color;\n"
-            "\n"
-            "void main()\n"
-            "{\n"
-            "color = vec4(1.0,0.0,0.0,1.0);\n"
-            "}\n";
-
-    unsigned int shader = createShader(vertexShader, fragmentShader);
-    glUseProgram(shader);
-
-    while (!glfwWindowShouldClose(win)) {
-        render(win);
-        glfwWaitEvents();
-        glfwSetFramebufferSizeCallback(
-                win,
-                onResize);
+std::vector<double> getKeyCentroidsXSorted(std::vector<std::vector<Point>> contours) {
+    std::vector<double> xs;
+    for (const auto &item : contours) {
+        auto M = moments(item);
+        auto cX = int(M.m10 / M.m00);
+        xs.push_back(cX);
     }
-    glfwDestroyWindow(win);
-    glfwTerminate();
+    std::sort(xs.begin(), xs.end());
+    return xs;
+}
+
+int dilation_size = 20;
+
+int main(int argc, char *argv[]) {
+    VideoCapture cap("C:\\Code\\Arpeggio\\sample_video.mp4");
+    namedWindow(window_detection_name, WINDOW_NORMAL);
+    // Trackbars to set thresholds for HSV values
+    Mat frame;
+    double stdDev = 0;
+    std::vector<std::vector<Point>> persistedContours;
+    while (true) {
+        cap >> frame;
+        if (frame.empty()) {
+            break;
+        }
+        // Convert from BGR to HSV colorspace
+        // Detect the object based on HSV Range Values
+        // Show the frames
+
+        Mat thresholded = threshholdWithHSV(frame);
+        Mat element = getStructuringElement(MORPH_RECT,
+                                            Size(2 * dilation_size + 1, 2 * dilation_size + 1),
+                                            Point(dilation_size, dilation_size));
+        Mat eroded;
+        erode(thresholded, eroded, element);
+        auto contours = getApproxContours(eroded);
+        double averageArea = getAverageArea(getAreas(contours));
+        stdDev = getAreaStdDev(getAreas(contours));
+        auto contoursWithinMean = getContoursWithAreaCloseWithinMean(contours, averageArea, stdDev);
+        colorPianoKeys(frame, contoursWithinMean);
+
+        imshow(window_detection_name, frame);
+        char key = (char) waitKey(30);
+        if (key == 'q' || key == 27) {
+            break;
+        }
+    }
     return 0;
 }
-
-
-
