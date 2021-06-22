@@ -1,6 +1,7 @@
 #include <iostream>
 #include<opencv2/opencv.hpp>
 #include <numeric>
+#include "KeyFinder.h"
 
 
 using namespace cv;
@@ -11,9 +12,9 @@ using namespace std;
 typedef vector<Point> contour_t;
 typedef vector<contour_t> contour_vector_t;
 
-char *original = "Original";
-char *processed = "Processed";
-char *yellow = "Yellow";
+const char *original = "Original";
+const char *processed = "Processed";
+const char *yellow = "Yellow";
 
 int lowThreshold = 20;
 const int max_lowThreshold = 100;
@@ -21,30 +22,33 @@ const int t_ratio = 3;
 const int kernel_size = 3;
 int erosion_size = 2;
 
-int iLowH = 22;
-int iHighH = 38;
-
-
-//static void CannyThreshold(int, void *) {
-//    blur( bw, detected_edges, Size(3,3) );
-//    bilateralFilter(bw, detected_edges, 5, 50, 50);
-//    Canny(detected_edges, detected_edges, lowThreshold, lowThreshold * t_ratio, kernel_size);
-//    dst = Scalar::all(0);
-//    frame.copyTo(dst, detected_edges);
-//}
-
 vector<contour_t> findYellowMarkers(Mat frame) {
     Mat imgHSV;
     cvtColor(frame, imgHSV, COLOR_BGR2HSV);
-    inRange(imgHSV, Scalar(iLowH, 160, 60), Scalar(iHighH, 255, 255), imgHSV);
-//    Mat element = getStructuringElement(MORPH_RECT,
-//                                        Size(2 * erosion_size + 1, 2 * erosion_size + 1),
-//                                        Point(erosion_size, erosion_size));
-//    morphologyEx(detected_edges, detected_edges, 2, element);
-//    morphologyEx(detected_edges, detected_edges, 3, element);
+    inRange(imgHSV, Scalar(20, 100, 100), Scalar(40, 255, 255), imgHSV);
     contour_vector_t contours;
     findContours(imgHSV, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
-    return contours;
+    //sort markers by area
+    sort(contours.begin(), contours.end(),
+         [](const contour_t &a, const contour_t &b) -> bool {
+             return contourArea(a) > contourArea(b);
+         });
+    //find the two contours with the smallest difference between areas (since the markers are the same size)
+    int smallestDiffIndex = 0;
+    float smallestDiff = 10000;
+    for (int i = 1; i < contours.size(); i++) {
+        if (contourArea(contours[i]) > 20 && contourArea(contours[i - 1]) > 20) {
+            float diff = abs(contourArea(contours[i]) - contourArea(contours[i - 1]));
+            if (diff < smallestDiff) {
+                smallestDiff = diff;
+                smallestDiffIndex = i;
+            }
+        }
+    }
+    std::vector<contour_t> out;
+    out.push_back(contours[smallestDiffIndex]);
+    out.push_back(contours[smallestDiffIndex - 1]);
+    return out;
 }
 
 contour_t findLeftYellowMarker(contour_vector_t yellowMarkers) {
@@ -55,6 +59,12 @@ contour_t findLeftYellowMarker(contour_vector_t yellowMarkers) {
         }
     }
     return yellowMarkers[index];
+}
+
+Mat downscaleFrame(Mat frame) {
+    Size size1(384, 216);
+    resize(frame, frame, size1);
+    return frame;
 }
 
 Mat preprocessFrame(Mat frame) {
@@ -70,11 +80,7 @@ Mat preprocessFrame(Mat frame) {
     return bw;
 }
 
-void colorPianoKeys(Mat frame, contour_vector_t contours) {
-    for (int i = 0; i < contours.size(); i++) {
-        drawContours(frame, contours, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED);
-    }
-}
+
 
 vector<double> getAreas(contour_vector_t contours) {
     vector<double> areas(contours.size());
@@ -112,36 +118,20 @@ contour_vector_t getContoursWithAreaCloseWithinMean(contour_vector_t in) {
     return out;
 }
 
-vector<double> getKeyCentroidsXSorted(contour_vector_t contours) {
-    vector<double> xs;
+
+vector<Point> getCentroidsFromContours(contour_vector_t contours) {
+    vector<Point> centroids;
     for (const auto &item : contours) {
         auto M = moments(item);
         auto cX = int(M.m10 / M.m00);
-        xs.push_back(cX);
+        auto cY = int(M.m01 / M.m00);
+        centroids.push_back(Point(cX,cY));
     }
-    sort(xs.begin(), xs.end());
-    return xs;
+    return centroids;
 }
 
-vector<contour_t> findKeys(Mat bw) {
-    contour_vector_t allContours;
-    findContours(bw, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
-    contour_vector_t filteredContours;
-    for (int i = 0; i < allContours.size(); i++) {
-        if (contourArea(allContours[i]) > 5000) {
-            filteredContours.push_back(allContours[i]);
-        }
-    }
 
-//    for (int i = 0; i < allContours.size(); i++) {
-//        vector<Point> approx_contour;
-//        approxPolyDP(allContours[i], allContours[i], arcLength(allContours[i], true) * 0.02, true);
-//    }
-    contour_vector_t contoursWithinMean = getContoursWithAreaCloseWithinMean(filteredContours);
-    return contoursWithinMean;
-
-}
 
 void highlightCKey(Mat frame, contour_vector_t keys, contour_vector_t markers) {
     contour_t leftMarker = findLeftYellowMarker(markers);
@@ -152,16 +142,18 @@ void highlightCKey(Mat frame, contour_vector_t keys, contour_vector_t markers) {
     }
 }
 
+Mat thresholdYellowObjects(Mat frame) {
+    Mat frame_HSV;
+    Mat frame_threshold;
+    cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
+    inRange(frame_HSV, Scalar(20, 100, 100), Scalar(30, 255, 255), frame_threshold);
+    return frame_threshold;
+}
+
 int main() {
-    VideoCapture cap("/Users/tobias/tum/ar/project/Arpeggio/video_1_1080.mov");
+    VideoCapture cap("C:\\Code\\Arpeggio\\sample_video_1.mp4");
 
-    namedWindow(original);
-    namedWindow(processed);
-    namedWindow(yellow);
-
-//    createTrackbar( "Min Threshold:", processed, &lowThreshold, max_lowThreshold, nullptr );
-    cvCreateTrackbar("LowH", yellow, &iLowH, 179); //Hue (0 - 179)
-    cvCreateTrackbar("HighH", yellow, &iHighH, 179);
+    namedWindow(original, WINDOW_NORMAL);
 
     if (!cap.isOpened()) {
         cout << "No video!" << endl;
@@ -169,71 +161,35 @@ int main() {
     }
 
     Mat frame;
+    clock_t current_ticks, delta_ticks;
+    clock_t fps = 0;
+    KeyFinder keyFinder;
     while (cap.read(frame)) {
-//        dst.create(frame.size(), frame.type());
+        current_ticks = clock();
+        frame = downscaleFrame(frame);
+        keyFinder.processFrame(frame);
+//        keyFinder.colorPianoKeysIntoFrame(frame);
 
+        contour_vector_t cMarkerContours = findYellowMarkers(frame);
+        keyFinder.specifyCs(getCentroidsFromContours(cMarkerContours));
+        keyFinder.__debug__renderCCentroids(frame);
+        keyFinder.colorKey(frame, 'C', Scalar(255,0,255));
+        keyFinder.labelKey(frame, 'C');
+        keyFinder.colorKey(frame, 'A', Scalar(255,0,255));
+        keyFinder.labelKey(frame, 'A');
+//        drawContours(frame, yellowMarkers, -1, Scalar(255, 0, 0));
 
-//        CannyThreshold(0, 0); // can be used alternatively instead of regular threshold
-//        bitwise_not(detected_edges, detected_edges);
-
-//        Mat element = getStructuringElement( MORPH_RECT,
-//                                             Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-//                                             Point( erosion_size, erosion_size ) );
-//        morphologyEx( detected_edges, detected_edges,2, element );
-//        morphologyEx( detected_edges, detected_edges,3, element );
-//        erode( detected_edges, detected_edges, element );
-//        vector<Vec2f> lines;
-//        HoughLines(detected_edges, lines, 1, CV_PI/180, 150, 0, 0 ); // runs the actual detection
-//        for( size_t i = 0; i < lines.size(); i++ )
-//        {
-//            float rho = lines[i][0], theta = lines[i][1];
-//            Point pt1, pt2;
-//            double a = cos(theta), b = sin(theta);
-//            double x0 = a*rho, y0 = b*rho;
-//            pt1.x = cvRound(x0 + 1000*(-b));
-//            pt1.y = cvRound(y0 + 1000*(a));
-//            pt2.x = cvRound(x0 - 1000*(-b));
-//            pt2.y = cvRound(y0 - 1000*(a));
-//            line( frame, pt1, pt2, Scalar(0,0,255), 3, LINE_AA);
-//        }
-
-        // Probabilistic Line Transform
-//        vector<Vec4i> linesP; // will hold the results of the detection
-//        HoughLinesP(detected_edges, linesP, 1, CV_PI/180, 50, 50, 10 ); // runs the actual detection
-//        // Draw the lines
-//        for( size_t i = 0; i < linesP.size(); i++ )
-//        {
-//            Vec4i l = linesP[i];
-//            line( frame, Point(l[0], l[1]), Point(l[2], l[3]), Scalar(0,255,0), 3, LINE_AA);
-//        }
-
-//        contour_vector_t contours;
-//        findContours(detected_edges, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
-//
-//        for (int i = 0; i < contours.size(); i++) {
-//            vector<Point> approx_contour;
-//            approxPolyDP(contours[i], approx_contour, arcLength(contours[i], true) * 0.02, true);
-//            if (approx_contour.size() > 1) {
-//                drawContours(frame, contours, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED );
-//            }
-//        }
-
-        Mat bw = preprocessFrame(frame);
-        contour_vector_t keys = findKeys(bw);
-//        drawContours(frame, keys, -1, Scalar(0, 0, 255), FILLED);
-//        colorPianoKeys(frame, keys);
-
-        contour_vector_t yellowMarkers = findYellowMarkers(frame);
-        drawContours(frame, yellowMarkers, -1, Scalar(255, 0, 0));
-        highlightCKey(frame, keys, yellowMarkers);
-
-//        imshow(processed, bw);
         imshow(original, frame);
 
 
         int key = waitKey(60);
         if (key == 27)
             break;
+
+        delta_ticks = clock() - current_ticks; //the time, in ms, that took to render the scene
+        if (delta_ticks > 0)
+            fps = CLOCKS_PER_SEC / delta_ticks;
+        cout << fps << endl;
     }
 
     return 0;
