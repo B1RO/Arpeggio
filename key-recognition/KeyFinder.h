@@ -5,6 +5,7 @@
 #define ARPEGGIO_KEYFINDER_H
 
 #include<opencv2/opencv.hpp>
+#include "./../music/Pitch.h"
 
 using namespace cv;
 using namespace std;
@@ -24,6 +25,8 @@ public:
     void specifyCs(vector<Point> CKeys);
     void colorKey(Mat frame, char key, Scalar color);
     void labelKey(Mat frame, char key);
+    contour_t getKeyContour(Pitch pitch);
+    Point getKeyCentroid(Pitch pitch);
 private:
     int getIndexOfContourClosestToPoint(Point point);
     std::vector<Point> CKeys;
