@@ -23,8 +23,8 @@ public:
     void __debug__renderCCentroids(Mat frame);
 
     void specifyCs(vector<Point> CKeys);
-    void colorKey(Mat frame, char key, Scalar color);
-    void labelKey(Mat frame, char key);
+    void colorKey(Mat frame, Pitch pitch, Scalar color);
+    void labelKey(Mat frame, Pitch pitch);
     contour_t getKeyContour(Pitch pitch);
     Point getKeyCentroid(Pitch pitch);
 private:
