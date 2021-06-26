@@ -2,7 +2,7 @@
 
 namespace music {
     vector<Note> CBlues::notes() {
-        Note notes[] = {
+        return ContinuousMusic::fromPointInTime({
             make_tuple(Pitch::C4,     0, 1000, make_tuple(0, 0, 0, 1)),
             make_tuple(Pitch::Eflat4, 0, 1000, make_tuple(0, 0, 0, 1)),
             make_tuple(Pitch::F4,     0, 1000, make_tuple(0, 0, 0, 1)),
@@ -25,10 +25,6 @@ namespace music {
             make_tuple(Pitch::F4,     6500, 500, make_tuple(0, 0, 0, 1)),
             make_tuple(Pitch::Eflat4, 7000, 500, make_tuple(0, 0, 0, 1)),
             make_tuple(Pitch::C4,     7500, 500, make_tuple(0, 0, 0, 1))
-        };
-
-        vector<Note> notesVector(notes, notes + sizeof(notes) / sizeof(Note));
-
-        return notesVector;
+        });
     };
 }
