@@ -50,13 +50,19 @@ Point getContourCentroid(contour_t contour) {
     return Point(cX, cY);
 }
 
-void KeyFinder::processFrame(Mat frame) {
+Mat KeyFinder::processFrame(Mat frame) {
+    auto processedFrame = dilateKeys(thresholdKeys(frame));
     contour_vector_t allContours;
-    findContours(dilateKeys(thresholdKeys(frame)), allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+    findContours(processedFrame, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
     contour_vector_t filteredContours;
     for (int i = 0; i < allContours.size(); i++) {
-        filteredContours.push_back(allContours[i]);
+//        contour_t approx;
+//        approxPolyDP(allContours[i], approx, arcLength(allContours[i], true) * 0.02, true);
+//        if (approx.size() >= 4 && contourArea(approx) / (frame.rows * frame.cols) >= 0.005)
+//            filteredContours.push_back(approx);
+            if(allContours[i].size() > 4 && contourArea(allContours[i]) / (frame.rows * frame.cols) >= 0.005)
+                filteredContours.push_back(allContours[i]);
     }
 
     //sort contours by centroid x position
@@ -66,6 +72,7 @@ void KeyFinder::processFrame(Mat frame) {
          });
 
     this->keyContours = filteredContours;
+    return processedFrame;
 }
 
 const int max_value_H = 360 / 2;
@@ -75,14 +82,14 @@ Mat KeyFinder::thresholdKeys(Mat frame) {
     Mat frame_HSV;
     Mat frame_threshold;
     cvtColor(frame, frame_HSV, COLOR_BGR2HSV);
-    int low_H = 0, low_S = 0, low_V = 175;
+    int low_H = 0, low_S = 0, low_V = 195;
     int high_H = max_value_H, high_S = max_value, high_V = max_value;
     inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
     return frame_threshold;
 }
 
 Mat KeyFinder::dilateKeys(Mat frame) {
-    int dilation_size = 3;
+    int dilation_size = 12;
     Mat element = getStructuringElement(MORPH_RECT,
                                         Size(2 * dilation_size + 1, 2 * dilation_size + 1),
                                         Point(dilation_size, dilation_size));
@@ -120,11 +127,11 @@ void KeyFinder::colorPianoKeysIntoFrame(Mat frame) {
 }
 
 void KeyFinder::specifyCs(vector<Point> CKeys) {
-    this->CKeys = std::move(CKeys);
+    this->yellowMarkers = std::move(CKeys);
 }
 
 void KeyFinder::__debug__renderCCentroids(Mat frame) {
-    for (const auto &item : this->CKeys) {
+    for (const auto &item : this->yellowMarkers) {
         circle(frame,
                item,
                5,
@@ -161,7 +168,7 @@ void KeyFinder::colorKey(Mat frame, Pitch pitch, Scalar color) {
                                 {1,   87, 155},
                                 {0,   77, 64}};
     int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
-    for (const auto &item : this->CKeys) {
+    for (const auto &item : this->yellowMarkers) {
         auto contourIndex = this->getIndexOfContourClosestToPoint(item);
         drawContours(frame, vector<vector<Point> >(1, this->keyContours[contourIndex + offset]), 0, keyColors[offset],
                      FILLED);
@@ -185,7 +192,7 @@ int KeyFinder::getIndexOfContourClosestToPoint(Point point) {
 
 void KeyFinder::labelKey(Mat frame, Pitch pitch) {
     int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
-    for (const auto &item : this->CKeys) {
+    for (const auto &item : this->yellowMarkers) {
         auto contourIndex = this->getIndexOfContourClosestToPoint(item);
         auto contour = this->keyContours[contourIndex + offset];
         auto centroid = getContourCentroid(contour);
@@ -196,7 +203,7 @@ void KeyFinder::labelKey(Mat frame, Pitch pitch) {
 
 contour_t KeyFinder::getKeyContour(Pitch pitch) {
     int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
-    for (const auto &item : this->CKeys) {
+    for (const auto &item : this->yellowMarkers) {
         auto contourIndex = this->getIndexOfContourClosestToPoint(item);
         auto contour = this->keyContours[contourIndex + offset];
         return contour;
@@ -205,5 +212,54 @@ contour_t KeyFinder::getKeyContour(Pitch pitch) {
 
 Point KeyFinder::getKeyCentroid(Pitch pitch) {
     return getContourCentroid(getKeyContour(pitch));
+}
+
+Mat KeyFinder::thresholdKeysGrayscale(Mat frame) {
+    Mat bw;
+    cvtColor(frame, bw, CV_BGR2GRAY);
+    threshold(bw, bw, 150, 255,
+              THRESH_BINARY); // 75 for somewhat combined white area, 150 for more individual keys
+    return bw;
+}
+
+contour_t KeyFinder::molestPianoKeyIntoASquare(contour_t contour) {
+    auto rect = minAreaRect(contour);
+    vector<Point2f> boxPts(4);
+    rect.points((boxPts.data()));
+    vector<Point> out(4);
+    std::transform(boxPts.begin(), boxPts.end(), out.begin(), [](Point2f point) { return  static_cast<cv::Point>(point);});
+    auto bl = *std::min_element(contour.begin(), contour.end(), [](const Point& a, const Point& b){return b.x-a.x + a.y-b.y > 0;});
+    auto br = *std::min_element(contour.begin(), contour.end(), [](const Point& a, const Point& b){return a.x-b.x + a.y-b.y > 0;});
+    auto tl = *std::min_element(contour.begin(), contour.end(), [](const Point& a, const Point& b){return b.x-a.x + b.y-a.y > 0;});
+    auto bottomEdge = br-bl;
+    auto leftEdge = tl-bl;
+    double leftEdgeNormInv = leftEdge.x == 0 && leftEdge.y == 0 ? 1 : 1/norm(leftEdge);
+    return {bl,br,br+leftEdge*leftEdgeNormInv* norm(bottomEdge),bl + leftEdge*leftEdgeNormInv*norm(bottomEdge)};
+}
+
+void KeyFinder::__debug__renderPianoSquares(Mat frame) {
+    for (const auto &item : this->keyContours) {
+        auto square = this->molestPianoKeyIntoASquare(item);
+        drawContours(frame, vector<vector<Point> >(1, square), -1, Scalar(rand() & 256, rand() % 256, rand() % 256),
+                     FILLED);
+    }
+}
+
+contour_t KeyFinder::molestPianoKeyIntoARectangle(contour_t contour) {
+    auto rect = minAreaRect(contour);
+    vector<Point2f> boxPts(4);
+    rect.points((boxPts.data()));
+    vector<Point> out(4);
+    std::transform(boxPts.begin(), boxPts.end(), out.begin(), [](Point2f point) { return  static_cast<cv::Point>(point);});
+    return out;
+}
+
+
+void KeyFinder::__debug__renderPianoRectangles(Mat frame) {
+    for (const auto &item : this->keyContours) {
+        auto square = this->molestPianoKeyIntoARectangle(item);
+        drawContours(frame, vector<vector<Point> >(1, square), -1, Scalar(rand() & 256, rand() % 256, rand() % 256),
+                     FILLED);
+    }
 }
 

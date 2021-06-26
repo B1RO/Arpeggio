@@ -26,34 +26,6 @@ const int t_ratio = 3;
 const int kernel_size = 3;
 int erosion_size = 2;
 
-vector<contour_t> findYellowMarkers(Mat frame) {
-    Mat imgHSV;
-    cvtColor(frame, imgHSV, COLOR_BGR2HSV);
-    inRange(imgHSV, Scalar(20, 100, 100), Scalar(40, 255, 255), imgHSV);
-    contour_vector_t contours;
-    findContours(imgHSV, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
-    //sort markers by area
-    sort(contours.begin(), contours.end(),
-         [](const contour_t &a, const contour_t &b) -> bool {
-             return contourArea(a) > contourArea(b);
-         });
-    //find the two contours with the smallest difference between areas (since the markers are the same size)
-    int smallestDiffIndex = 0;
-    float smallestDiff = 10000;
-    for (int i = 1; i < contours.size(); i++) {
-        if (contourArea(contours[i]) > 20 && contourArea(contours[i - 1]) > 20) {
-            float diff = abs(contourArea(contours[i]) - contourArea(contours[i - 1]));
-            if (diff < smallestDiff) {
-                smallestDiff = diff;
-                smallestDiffIndex = i;
-            }
-        }
-    }
-    std::vector<contour_t> out;
-    out.push_back(contours[smallestDiffIndex]);
-    out.push_back(contours[smallestDiffIndex - 1]);
-    return out;
-}
 
 contour_t findLeftYellowMarker(contour_vector_t yellowMarkers) {
     int index = 0;
@@ -133,16 +105,6 @@ vector<Point> getCentroidsFromContours(contour_vector_t contours) {
     return centroids;
 }
 
-
-void highlightCKey(Mat frame, contour_vector_t keys, contour_vector_t markers) {
-    contour_t leftMarker = findLeftYellowMarker(markers);
-    for (int i = 0; i < keys.size(); i++) {
-        if (pointPolygonTest(keys[i], leftMarker[0], false) > 0) {
-            drawContours(frame, keys, i, Scalar(0, 255, 0), FILLED);
-        }
-    }
-}
-
 Mat thresholdYellowObjects(Mat frame) {
     Mat frame_HSV;
     Mat frame_threshold;
@@ -152,11 +114,11 @@ Mat thresholdYellowObjects(Mat frame) {
 }
 
 
-void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder)> onTransformed) {
+void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder,CMarkerFinder)> onTransformed) {
     Mat frame;
     while (capture.read(frame)) {
         Mat processed = processFrame(frame);
-        onTransformed(frame, processed, keyFinder);
+        onTransformed(frame, processed, keyFinder,markerFinder);
         int key = waitKey(60);
         if (key == 27)
             break;
@@ -164,9 +126,8 @@ void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(
 }
 
 Mat VideoFeedTransformer::processFrame(Mat frame) {
-    frame = downscaleFrame(frame);
-    keyFinder.processFrame(frame);
-    contour_vector_t cMarkerContours = findYellowMarkers(frame);
-    keyFinder.specifyCs(getCentroidsFromContours(cMarkerContours));
-    return frame;
+    auto processed = keyFinder.processFrame(frame);
+    markerFinder.processFrame(frame);
+    keyFinder.specifyCs(getCentroidsFromContours(markerFinder.getYellowMarkers()));
+    return processed;
 }

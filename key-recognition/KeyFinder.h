@@ -16,22 +16,26 @@ typedef vector<contour_t> contour_vector_t;
 
 class KeyFinder {
 public:
-    void processFrame(Mat frame);
+    Mat processFrame(Mat frame);
 
     void colorPianoKeysIntoFrame(Mat frame);
 
     void __debug__renderCCentroids(Mat frame);
-
+    void __debug__renderPianoSquares(Mat frame);
+    void __debug__renderPianoRectangles(Mat frame);
     void specifyCs(vector<Point> CKeys);
     void colorKey(Mat frame, Pitch pitch, Scalar color);
     void labelKey(Mat frame, Pitch pitch);
     contour_t getKeyContour(Pitch pitch);
     Point getKeyCentroid(Pitch pitch);
 private:
+    contour_t molestPianoKeyIntoASquare(contour_t contour);
+    contour_t molestPianoKeyIntoARectangle(contour_t contour);
     int getIndexOfContourClosestToPoint(Point point);
-    std::vector<Point> CKeys;
+    std::vector<Point> yellowMarkers;
     std::vector<contour_t> keyContours;
     static Mat thresholdKeys(Mat frame);
+    static Mat thresholdKeysGrayscale(Mat frame);
     static Mat dilateKeys(Mat frame);
 };
 
