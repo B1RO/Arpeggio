@@ -20,11 +20,11 @@ void CMarkerFinder::findYellowMarkers(Mat frame) {
              return contourArea(a) > contourArea(b);
          });
     //find the two contours with the smallest difference between areas (since the markers are the same size)
-    int smallestDiffIndex = 0;
+    int smallestDiffIndex = 1;
     float smallestDiff = 10000;
     for (int i = 1; i < contours.size(); i++) {
-        auto normalizedAreaPrev = contourArea(contours[i-1])/(frame.rows*frame.cols);
-        auto normalizedArea = contourArea(contours[i])/(frame.rows*frame.cols);
+        auto normalizedAreaPrev = contourArea(contours[i - 1]) / (frame.rows * frame.cols);
+        auto normalizedArea = contourArea(contours[i]) / (frame.rows * frame.cols);
         //marker has to occupy at least 0.01% of screen
         if (normalizedAreaPrev > 0.0001 && normalizedArea > 0.0001) {
             float diff = abs(contourArea(contours[i]) - contourArea(contours[i - 1]));
@@ -35,9 +35,16 @@ void CMarkerFinder::findYellowMarkers(Mat frame) {
         }
     }
     std::vector<contour_t> out;
-    out.push_back(contours[smallestDiffIndex]);
-    out.push_back(contours[smallestDiffIndex - 1]);
-    this->yellowMarkers = out;
+    if (contours.size() > 1) {
+        out.push_back(contours[smallestDiffIndex]);
+        out.push_back(contours[smallestDiffIndex - 1]);
+        this->yellowMarkers = out;
+    }
+    else
+    {
+        this->yellowMarkers = contours;
+    }
+    return this->yellowMarkers;
 }
 
 vector<contour_t> CMarkerFinder::getYellowMarkers() {
