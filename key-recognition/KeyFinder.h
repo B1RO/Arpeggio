@@ -28,9 +28,11 @@ public:
     void labelKey(Mat frame, Pitch pitch);
     contour_t getKeyContour(Pitch pitch);
     Point getKeyCentroid(Pitch pitch);
+    static contour_t molestPianoKeyIntoASquare(contour_t contour);
+    static contour_t molestPianoKeyIntoARectangle(contour_t contour);
+    vector<contour_t> getKeysAsSquares();
+    vector<contour_t> getKeysAsRectangles();
 private:
-    contour_t molestPianoKeyIntoASquare(contour_t contour);
-    contour_t molestPianoKeyIntoARectangle(contour_t contour);
     int getIndexOfContourClosestToPoint(Point point);
     std::vector<Point> yellowMarkers;
     std::vector<contour_t> keyContours;

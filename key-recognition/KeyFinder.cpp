@@ -61,8 +61,8 @@ Mat KeyFinder::processFrame(Mat frame) {
 //        approxPolyDP(allContours[i], approx, arcLength(allContours[i], true) * 0.02, true);
 //        if (approx.size() >= 4 && contourArea(approx) / (frame.rows * frame.cols) >= 0.005)
 //            filteredContours.push_back(approx);
-            if(allContours[i].size() > 4 && contourArea(allContours[i]) / (frame.rows * frame.cols) >= 0.005)
-                filteredContours.push_back(allContours[i]);
+        if (allContours[i].size() > 4 && contourArea(allContours[i]) / (frame.rows * frame.cols) >= 0.005)
+            filteredContours.push_back(allContours[i]);
     }
 
     //sort contours by centroid x position
@@ -227,14 +227,19 @@ contour_t KeyFinder::molestPianoKeyIntoASquare(contour_t contour) {
     vector<Point2f> boxPts(4);
     rect.points((boxPts.data()));
     vector<Point> out(4);
-    std::transform(boxPts.begin(), boxPts.end(), out.begin(), [](Point2f point) { return  static_cast<cv::Point>(point);});
-    auto bl = *std::min_element(contour.begin(), contour.end(), [](const Point& a, const Point& b){return b.x-a.x + a.y-b.y > 0;});
-    auto br = *std::min_element(contour.begin(), contour.end(), [](const Point& a, const Point& b){return a.x-b.x + a.y-b.y > 0;});
-    auto tl = *std::min_element(contour.begin(), contour.end(), [](const Point& a, const Point& b){return b.x-a.x + b.y-a.y > 0;});
-    auto bottomEdge = br-bl;
-    auto leftEdge = tl-bl;
-    double leftEdgeNormInv = leftEdge.x == 0 && leftEdge.y == 0 ? 1 : 1/norm(leftEdge);
-    return {bl,br,br+leftEdge*leftEdgeNormInv* norm(bottomEdge),bl + leftEdge*leftEdgeNormInv*norm(bottomEdge)};
+    std::transform(boxPts.begin(), boxPts.end(), out.begin(),
+                   [](Point2f point) { return static_cast<cv::Point>(point); });
+    auto bl = *std::min_element(contour.begin(), contour.end(),
+                                [](const Point &a, const Point &b) { return b.x - a.x + a.y - b.y > 0; });
+    auto br = *std::min_element(contour.begin(), contour.end(),
+                                [](const Point &a, const Point &b) { return a.x - b.x + a.y - b.y > 0; });
+    auto tl = *std::min_element(contour.begin(), contour.end(),
+                                [](const Point &a, const Point &b) { return b.x - a.x + b.y - a.y > 0; });
+    auto bottomEdge = br - bl;
+    auto leftEdge = tl - bl;
+    double leftEdgeNormInv = leftEdge.x == 0 && leftEdge.y == 0 ? 1 : 1 / norm(leftEdge);
+    return {bl, br, br + leftEdge * leftEdgeNormInv * norm(bottomEdge),
+            bl + leftEdge * leftEdgeNormInv * norm(bottomEdge)};
 }
 
 void KeyFinder::__debug__renderPianoSquares(Mat frame) {
@@ -250,7 +255,8 @@ contour_t KeyFinder::molestPianoKeyIntoARectangle(contour_t contour) {
     vector<Point2f> boxPts(4);
     rect.points((boxPts.data()));
     vector<Point> out(4);
-    std::transform(boxPts.begin(), boxPts.end(), out.begin(), [](Point2f point) { return  static_cast<cv::Point>(point);});
+    std::transform(boxPts.begin(), boxPts.end(), out.begin(),
+                   [](Point2f point) { return static_cast<cv::Point>(point); });
     return out;
 }
 
@@ -262,4 +268,20 @@ void KeyFinder::__debug__renderPianoRectangles(Mat frame) {
                      FILLED);
     }
 }
+
+vector<contour_t> KeyFinder::getKeysAsSquares() {
+    std::vector<contour_t> out(this->keyContours.size());
+    transform(this->keyContours.begin(), this->keyContours.end(), back_inserter(out),
+              molestPianoKeyIntoASquare);
+    return out;
+}
+
+
+vector<contour_t> KeyFinder::getKeysAsRectangles() {
+    std::vector<contour_t> out(this->keyContours.size());
+    transform(this->keyContours.begin(), this->keyContours.end(), back_inserter(out),
+              [this](auto contour) { return molestPianoKeyIntoARectangle(contour); });
+    return out;
+}
+
 
