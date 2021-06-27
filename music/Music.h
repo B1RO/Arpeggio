@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 #include <vector>
 #include "Pitch.h"
 
@@ -16,13 +17,11 @@ namespace music {
      * Conversion taken from:
      * https://www.inspiredacoustics.com/en/MIDI_note_numbers_and_center_frequencies
      */
-    frequency frequency_from_pitch(Pitch p, frequency baseFrequency = 440.0f) {
-        return baseFrequency * (2 ^ (((int) p - 69) / 12));
-    }
+    frequency frequency_from_pitch(Pitch p, frequency baseFrequency = 440.0f);
 
-    Pitch nearest_pitch_from_frequency(frequency f, frequency baseFrequency = 440.0f) {
-        return (Pitch) (f / baseFrequency); // TODO finish
-    }
+    Pitch nearest_pitch_from_frequency(frequency f, frequency baseFrequency = 440.0f);
+
+    bool isBlackKey(Pitch p);
 
     /**
      * A note is a tuple of
