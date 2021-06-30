@@ -3,8 +3,10 @@
 //
 
 #include "CMarkerFinder.h"
+#include "ContourScaler.h"
 
 void CMarkerFinder::processFrame(Mat frame) {
+    this->sourceFrame = frame;
     this->findYellowMarkers(frame);
 }
 
@@ -26,7 +28,7 @@ void CMarkerFinder::findYellowMarkers(Mat frame) {
         auto normalizedAreaPrev = contourArea(contours[i - 1]) / (frame.rows * frame.cols);
         auto normalizedArea = contourArea(contours[i]) / (frame.rows * frame.cols);
         //marker has to occupy at least 0.01% of screen
-        if (normalizedAreaPrev > 0.0001 && normalizedArea > 0.0001) {
+        if (normalizedAreaPrev > 0.001 && normalizedArea > 0.001) {
             float diff = abs(contourArea(contours[i]) - contourArea(contours[i - 1]));
             if (diff < smallestDiff) {
                 smallestDiff = diff;
@@ -44,7 +46,6 @@ void CMarkerFinder::findYellowMarkers(Mat frame) {
     {
         this->yellowMarkers = contours;
     }
-    return this->yellowMarkers;
 }
 
 vector<contour_t> CMarkerFinder::getYellowMarkers() {
@@ -52,5 +53,6 @@ vector<contour_t> CMarkerFinder::getYellowMarkers() {
 }
 
 void CMarkerFinder::highlightMarkers(Mat frame) {
-    drawContours(frame, this->yellowMarkers, -1, Scalar(255, 0, 255), FILLED);
+    auto scaled = ContourScaler::scaleContours(sourceFrame.cols, sourceFrame.rows, frame.cols, frame.rows, this->yellowMarkers);
+    drawContours(frame, scaled, -1, Scalar(255, 0, 255), FILLED);
 }

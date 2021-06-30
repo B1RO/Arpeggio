@@ -33,6 +33,7 @@ public:
     vector<contour_t> getKeysAsSquares();
     vector<contour_t> getKeysAsRectangles();
 private:
+    Mat sourceFrame;
     int getIndexOfContourClosestToPoint(Point point);
     std::vector<Point> yellowMarkers;
     std::vector<contour_t> keyContours;

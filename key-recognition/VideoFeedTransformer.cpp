@@ -117,7 +117,7 @@ Mat thresholdYellowObjects(Mat frame) {
 void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder,CMarkerFinder)> onTransformed) {
     Mat frame;
     while (capture.read(frame)) {
-        Mat processed = processFrame(frame);
+        Mat processed = processFrame(downscaleFrame(frame));
         onTransformed(frame, processed, keyFinder,markerFinder);
         int key = waitKey(60);
         if (key == 27)

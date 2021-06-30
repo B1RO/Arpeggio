@@ -14,6 +14,7 @@ public:
     vector<contour_t> getYellowMarkers();
     void highlightMarkers(Mat frame);
 private:
+    Mat sourceFrame;
     vector<contour_t> yellowMarkers;
     void findYellowMarkers(Mat frame);
 };

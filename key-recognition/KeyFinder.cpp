@@ -3,6 +3,7 @@
 //
 
 #include "KeyFinder.h"
+#include "ContourScaler.h"
 
 
 /**
@@ -51,6 +52,7 @@ Point getContourCentroid(contour_t contour) {
 }
 
 Mat KeyFinder::processFrame(Mat frame) {
+    this->sourceFrame = frame;
     auto processedFrame = dilateKeys(thresholdKeys(frame));
     contour_vector_t allContours;
     findContours(processedFrame, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
@@ -89,7 +91,7 @@ Mat KeyFinder::thresholdKeys(Mat frame) {
 }
 
 Mat KeyFinder::dilateKeys(Mat frame) {
-    int dilation_size = 12;
+    int dilation_size = frame.cols/200;
     Mat element = getStructuringElement(MORPH_RECT,
                                         Size(2 * dilation_size + 1, 2 * dilation_size + 1),
                                         Point(dilation_size, dilation_size));
@@ -120,8 +122,9 @@ int convertPitchToCOffset(Pitch pitch) {
 }
 
 void KeyFinder::colorPianoKeysIntoFrame(Mat frame) {
-    for (int i = 0; i < this->keyContours.size(); i++) {
-        drawContours(frame, this->keyContours, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED);
+    auto scaled = ContourScaler::scaleContours(this->sourceFrame.cols, this->sourceFrame.rows, frame.cols, frame.rows, this->keyContours);
+    for (int i = 0; i < scaled.size(); i++) {
+        drawContours(frame, scaled, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED);
     }
 
 }
@@ -245,7 +248,8 @@ contour_t KeyFinder::molestPianoKeyIntoASquare(contour_t contour) {
 void KeyFinder::__debug__renderPianoSquares(Mat frame) {
     for (const auto &item : this->keyContours) {
         auto square = this->molestPianoKeyIntoASquare(item);
-        drawContours(frame, vector<vector<Point> >(1, square), -1, Scalar(rand() & 256, rand() % 256, rand() % 256),
+        auto scaled = ContourScaler::scaleContour(this->sourceFrame.cols, this->sourceFrame.rows, frame.cols, frame.rows, square);
+        drawContours(frame, vector<vector<Point> >(1, scaled), -1, Scalar(rand() & 256, rand() % 256, rand() % 256),
                      FILLED);
     }
 }
