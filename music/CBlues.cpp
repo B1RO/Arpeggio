@@ -1,3 +1,5 @@
+#pragma once
+
 #include "./CBlues.h"
 
 namespace music {
