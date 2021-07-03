@@ -1,5 +1,5 @@
 #include "./Music.h"
-
+#pragma once
 namespace music {
     frequency frequency_from_pitch(Pitch p, frequency baseFrequency) {
         return baseFrequency * (2 ^ (((int) p - 69) / 12));

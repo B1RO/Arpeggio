@@ -1,3 +1,5 @@
+#pragma once
+
 #include "./CDur.h"
 
 namespace music {

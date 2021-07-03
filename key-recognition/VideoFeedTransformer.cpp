@@ -26,6 +26,34 @@ const int t_ratio = 3;
 const int kernel_size = 3;
 int erosion_size = 2;
 
+vector<contour_t> findYellowMarkers(Mat frame) {
+    Mat imgHSV;
+    cvtColor(frame, imgHSV, COLOR_BGR2HSV);
+    inRange(imgHSV, Scalar(20, 100, 100), Scalar(40, 255, 255), imgHSV);
+    contour_vector_t contours;
+    findContours(imgHSV, contours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+    //sort markers by area
+    sort(contours.begin(), contours.end(),
+         [](const contour_t &a, const contour_t &b) -> bool {
+             return contourArea(a) > contourArea(b);
+         });
+    //find the two contours with the smallest difference between areas (since the markers are the same size)
+    int smallestDiffIndex = 0;
+    float smallestDiff = 10000;
+    for (int i = 1; i < contours.size(); i++) {
+        if (contourArea(contours[i]) > 20 && contourArea(contours[i - 1]) > 20) {
+            float diff = abs(contourArea(contours[i]) - contourArea(contours[i - 1]));
+            if (diff < smallestDiff) {
+                smallestDiff = diff;
+                smallestDiffIndex = i;
+            }
+        }
+    }
+    std::vector<contour_t> out;
+    out.push_back(contours[smallestDiffIndex]);
+    //out.push_back(contours[smallestDiffIndex - 1]);
+    return out;
+}
 
 contour_t findLeftYellowMarker(contour_vector_t yellowMarkers) {
     int index = 0;
@@ -38,7 +66,8 @@ contour_t findLeftYellowMarker(contour_vector_t yellowMarkers) {
 }
 
 Mat downscaleFrame(Mat frame) {
-    Size size1(384, 216);
+    //Size size1(384, 216);
+    Size size1(640, 480);
     resize(frame, frame, size1);
     return frame;
 }
@@ -114,15 +143,20 @@ Mat thresholdYellowObjects(Mat frame) {
 }
 
 
-void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder,CMarkerFinder)> onTransformed) {
+void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder,  Renderer& renderer, CMarkerFinder)> onTransformed,  Renderer& renderer ) {
     Mat frame;
     while (capture.read(frame)) {
-        Mat processed = processFrame(downscaleFrame(frame));
-        onTransformed(frame, processed, keyFinder,markerFinder);
-        int key = waitKey(60);
-        if (key == 27)
+        auto downscaled = downscaleFrame(frame);
+        Mat processed = processFrame(downscaled);
+        onTransformed(downscaled, processed, keyFinder, renderer, markerFinder);
+        if (renderer.dead)
             break;
+        int key = waitKey(60);
+       /* if (key == 27)
+            break;*/
+
     }
+ 
 }
 
 Mat VideoFeedTransformer::processFrame(Mat frame) {

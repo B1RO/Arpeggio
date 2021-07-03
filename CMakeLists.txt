@@ -9,5 +9,7 @@ find_package(OpenGL REQUIRED)
 add_subdirectory(./GLFW)
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
-add_executable(Arpeggio main.cpp music/Pitch.h key-recognition/KeyFinder.cpp key-recognition/KeyFinder.h key-recognition/VideoFeedTransformer.cpp key-recognition/VideoFeedTransformer.h key-recognition/CMarkerFinder.cpp key-recognition/CMarkerFinder.h key-recognition/ContourScaler.h)
+
+add_executable(Arpeggio main.cpp music/Pitch.h music/CBlues.h music/CBlues.cpp music/CDur.h music/CDur.cpp music/ContinuousMusic.h music/ContinuousMusic.cpp  music/Music.h music/Music.cpp rendering/Renderer.h rendering/Renderer.cpp  key-recognition/KeyFinder.cpp key-recognition/KeyFinder.h key-recognition/VideoFeedTransformer.cpp key-recognition/VideoFeedTransformer.h key-recognition/CMarkerFinder.cpp key-recognition/CMarkerFinder.h key-recognition/ContourScaler.h)
+
 target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBS} ${GLEW_LIBRARIES} glfw ${OPENGL_LIBRARIES})

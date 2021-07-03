@@ -1,5 +1,6 @@
 #include "./ContinuousMusic.h"
 #include <chrono>
+#pragma once
 
 using namespace std;
 
