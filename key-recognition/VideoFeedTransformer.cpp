@@ -86,41 +86,6 @@ Mat preprocessFrame(Mat frame) {
 }
 
 
-vector<double> getAreas(contour_vector_t contours) {
-    vector<double> areas(contours.size());
-    for (int i = 0; i < contours.size(); i++) {
-        areas.push_back(contourArea(contours[i]));
-    }
-    return areas;
-}
-
-double getAverageArea(vector<double> areas) {
-    return accumulate(areas.begin(), areas.end(), 0.0) / areas.size();
-}
-
-double getAreaStdDev(vector<double> areas) {
-    double mean = getAverageArea(areas);
-    double sq_sum = inner_product(areas.begin(), areas.end(), areas.begin(), 0.0);
-    double stdev = sqrt(sq_sum / areas.size() - mean * mean);
-    return stdev;
-}
-
-contour_vector_t getContoursWithAreaCloseWithinMean(contour_vector_t in) {
-    vector<double> areas = getAreas(in);
-    for (int i = 0; i < areas.size(); i++) {
-        cout << areas[i] << endl;
-    }
-    double average = getAverageArea(areas);
-    cout << "Average: " << average << endl << endl << endl;
-    double stddev = getAreaStdDev(areas);
-    contour_vector_t out;
-    for (const auto &item : in) {
-        if (abs(contourArea(item) - average) < stddev / 2) {
-            out.push_back(item);
-        }
-    }
-    return out;
-}
 
 
 vector<Point> getCentroidsFromContours(contour_vector_t contours) {
@@ -143,6 +108,21 @@ Mat thresholdYellowObjects(Mat frame) {
 }
 
 
+void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder, CMarkerFinder)> onTransformed) {
+    Mat frame;
+    while (capture.read(frame)) {
+        auto downscaled = downscaleFrame(frame);
+        Mat processed = processFrame(downscaled);
+        onTransformed(downscaled, processed, keyFinder, markerFinder);
+        int key = waitKey(60);
+        if (key == 27)
+             break;
+
+    }
+
+}
+
+
 void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(Mat, Mat, KeyFinder,  Renderer& renderer, CMarkerFinder)> onTransformed,  Renderer& renderer ) {
     Mat frame;
     while (capture.read(frame)) {
@@ -156,12 +136,13 @@ void VideoFeedTransformer::consumeFeed(VideoCapture capture, std::function<void(
             break;*/
 
     }
- 
+
 }
 
 Mat VideoFeedTransformer::processFrame(Mat frame) {
     auto processed = keyFinder.processFrame(frame);
     markerFinder.processFrame(frame);
+    auto processedBlack = keyFinder.processFrameBlackKeys(frame);
     keyFinder.specifyCs(getCentroidsFromContours(markerFinder.getYellowMarkers()));
     return processed;
 }
