@@ -161,7 +161,7 @@ void Renderer::processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFi
         return;
     }
 
-    vector<Note> currNotes = renderer.song.notes();
+    vector<Note> currNotes = renderer.song->notes();
     vector<NoteToRender> notesToRender;
     //vector <Pitch> testPitches;
     //testPitches.push_back(Pitch::C4);

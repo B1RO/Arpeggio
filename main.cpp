@@ -1,8 +1,9 @@
 ﻿#define GLFW_INCLUDE_GLU
-#include <glfw/glfw3.h> 
+#include <GLFW/glfw3.h> 
 #include "key-recognition/KeyFinder.h"
 #include "key-recognition/VideoFeedTransformer.h"
 #include "rendering/Renderer.h"
+#include "music/MusicSelection.h"
 #include <iostream>
 #include <iomanip>
 
@@ -41,6 +42,9 @@ void initVideoStream(cv::VideoCapture& cap) {
 }
 
 int main(int argc, char* argv[]) {
+	// Select Music and Mode
+	auto musicMode = MusicSelection::selectMusic();
+
 	GLFWwindow* window;
 
 	// Initialize the library
@@ -56,7 +60,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	// Initialize the GL library
-	Renderer renderer(window);
+	Renderer renderer(window, get<0>(musicMode), get<1>(musicMode));
 	renderer.initGL();
 
 	cv::VideoCapture cap;

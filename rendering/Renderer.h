@@ -5,7 +5,7 @@
 #define ARPEGGIO_RENDERER_H
 
 #define GLFW_INCLUDE_GLU
-#include <glfw/glfw3.h> 
+#include <GLFW/glfw3.h> 
 #include "../key-recognition/KeyFinder.h"
 #include "../key-recognition/CMarkerFinder.h"
 #include "../music/Pitch.h"
@@ -18,7 +18,10 @@ class Renderer {
 typedef tuple<vector<float>, tuple<float, float, float, float>> NoteToRender;
 
 public:
-	Renderer(GLFWwindow* win):window(win){}
+	Renderer(GLFWwindow* win, Music *song, bool mode):window(win){
+		this->song = song;
+		this->mode = mode;
+	}
 	//OpenGL initialization function
 	void initGL();
 
@@ -30,7 +33,8 @@ public:
 	//void processFrameTest();
 	
 	GLFWwindow* window;
-	CDur song;
+	Music *song;
+	bool mode;
 	bool dead = false;
 
 };
