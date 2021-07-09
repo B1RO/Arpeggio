@@ -94,6 +94,53 @@ Mat KeyFinder::thresholdKeys(Mat frame) {
     return frame_threshold;
 }
 
+Mat KeyFinder::getPianoMask(const Mat &frame) {
+    Mat p;
+    cvtColor(frame, p, CV_BGR2GRAY);
+    threshold(p, p, 80, 255, THRESH_BINARY);
+    int erosion_size = 2;
+    Mat element = getStructuringElement(MORPH_RECT,
+                                        Size(2 * erosion_size + 1, 2 * erosion_size + 1),
+                                        Point(erosion_size, erosion_size));
+//    morphologyEx(bw, bw, 2, element);
+//    morphologyEx(bw, bw, 3, element);
+    erode(p, p, element);
+    dilate(p, p, element);
+    dilate(p, p, element);
+    erode(p, p, element);
+    contour_vector_t allContours;
+    findContours(p, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+    int maxArea = 0;
+    int maxIndex = 0;
+    for (int i = 0; i < allContours.size(); i++) {
+//        int currentArea = boundingRect(allContours[i]).area();
+        int currentArea = contourArea(allContours[i]);
+        if (currentArea > maxArea) {
+            maxIndex = i;
+            maxArea = currentArea;
+        }
+    }
+    contour_t pianoContour = allContours[maxIndex];
+    RotatedRect pianoRect = minAreaRect(pianoContour);
+//    drawContours(frame, allContours, maxIndex, Scalar(255, 0, 0), 3);
+    Point2f points[4];
+
+pianoRect.points(points);
+    cv::Point vertices[4];
+    for(int i = 0; i < 4; ++i){
+        vertices[i] = points[i];
+    }
+    line(frame, vertices[0], vertices[1], Scalar(255, 0, 0));
+    line(frame, vertices[1], vertices[2], Scalar(255, 0, 0));
+    line(frame, vertices[2], vertices[3], Scalar(255, 0, 0));
+    line(frame, vertices[3], vertices[0], Scalar(255, 0, 0));
+
+    Mat mask(frame.rows, frame.cols, CV_8UC1, Scalar(0, 0, 0));
+
+//    polylines(frame, vertices, 4, 1, true, Scalar(255, 0, 0), 5);
+    fillConvexPoly(mask, vertices, 4, Scalar(255, 255, 255));
+    return mask;
+}
 
 Mat KeyFinder::thresholdKeysBlack(const Mat &frame) {
     cv::Mat invSrc = cv::Scalar::all(255) - frame;
@@ -103,7 +150,24 @@ Mat KeyFinder::thresholdKeysBlack(const Mat &frame) {
     int low_H = 0, low_S = 0, low_V = 242;
     int high_H = max_value_H, high_S = max_value, high_V = max_value;
     inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
-    return frame_threshold;
+
+    Mat p;
+    cvtColor(frame, p, CV_BGR2GRAY);
+    threshold(p, p, 120, 255, THRESH_BINARY);
+    bitwise_not(p, p);
+    Mat mask = getPianoMask(frame);
+    bitwise_and(p, mask, p);
+    int erosion_size = 2;
+    Mat element = getStructuringElement(MORPH_RECT,
+                                        Size(2 * erosion_size + 1, 2 * erosion_size + 1),
+                                        Point(erosion_size, erosion_size));
+    morphologyEx(p, p, 2, element);
+    morphologyEx(p, p, 3, element);
+//    erode(p, p, element);
+//    dilate(p, p, element);
+//    dilate(p, p, element);
+//    erode(p, p, element);
+    return p;
 }
 
 Mat KeyFinder::dilateKeys(Mat frame) {
@@ -348,6 +412,7 @@ Mat KeyFinder::processFrameBlackKeys(Mat frame) {
                                         Size(2 * dilation_size + 1, 2 * dilation_size + 1),
                                         Point(dilation_size, dilation_size));
     auto processedFrame = thresholdKeysBlack(frame);
+    return processedFrame;
     contour_vector_t allContours;
     findContours(processedFrame, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 

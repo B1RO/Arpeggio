@@ -43,6 +43,8 @@ private:
     static Mat thresholdKeysGrayscale(Mat frame);
     static Mat thresholdKeysBlack(const Mat& frame);
     static Mat dilateKeys(Mat frame);
+
+    static Mat getPianoMask(const Mat &frame);
 };
 
 
