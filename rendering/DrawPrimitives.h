@@ -59,49 +59,67 @@ void drawCone(GLdouble base, GLdouble height, GLint slices, GLint stacks)
 	glEnd();
 }
 
-void drawCube()
+void drawCuboid(float width,float height)
 {
-	glBegin(GL_POLYGON);
-	glColor3f(1.0, 1.0, 1.0);
-	glVertex3f(0.5, -0.5, 0.5);
-	glVertex3f(0.5, 0.5, 0.5);
-	glVertex3f(-0.5, 0.5, 0.5);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glEnd();
+	float halfWidth = width / 2;
+	float halfHeight = height / 2;
+	cout << "width/2: " << halfWidth << " height/2: " << halfHeight<< endl;
 
-	// Purple side - RIGHT
-	glBegin(GL_POLYGON);
-	glColor3f(1.0, 0.0, 1.0);
-	glVertex3f(0.5, -0.5, -0.5);
-	glVertex3f(0.5, 0.5, -0.5);
-	glVertex3f(0.5, 0.5, 0.5);
-	glVertex3f(0.5, -0.5, 0.5);
-	glEnd();
+	glBegin(GL_QUADS);
 
-	// Green side - LEFT
-	glBegin(GL_POLYGON);
-	glColor3f(0.0, 1.0, 0.0);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glVertex3f(-0.5, 0.5, 0.5);
-	glVertex3f(-0.5, 0.5, -0.5);
-	glVertex3f(-0.5, -0.5, -0.5);
-	glEnd();
+	//Front
+	glNormal3f(0.0f, 0.0f, 1.0f);
+	//glNormal3f(-1.0f, 0.0f, 1.0f);
+	glVertex3f(-halfWidth, -halfHeight, halfWidth);
+	//glNormal3f(1.0f, 0.0f, 1.0f);
+	glVertex3f(halfWidth, -halfHeight, halfWidth);
+	//glNormal3f(1.0f, 0.0f, 1.0f);
+	glVertex3f(halfWidth, halfHeight, halfWidth);
+	//glNormal3f(-1.0f, 0.0f, 1.0f);
+	glVertex3f(-halfWidth, halfHeight, halfWidth);
 
-	// Blue side - TOP
-	glBegin(GL_POLYGON);
-	glColor3f(0.0, 0.0, 1.0);
-	glVertex3f(0.5, 0.5, 0.5);
-	glVertex3f(0.5, 0.5, -0.5);
-	glVertex3f(-0.5, 0.5, -0.5);
-	glVertex3f(-0.5, 0.5, 0.5);
-	glEnd();
+	//Right
+	glNormal3f(1.0f, 0.0f, 0.0f);
+	//glNormal3f(1.0f, 0.0f, -1.0f);
+	glVertex3f(halfWidth, -halfHeight, -halfWidth);
+	//glNormal3f(1.0f, 0.0f, -1.0f);
+	glVertex3f(halfWidth, halfHeight, -halfWidth);
+	//glNormal3f(1.0f, 0.0f, 1.0f);
+	glVertex3f(halfWidth, halfHeight, halfWidth);
+	//glNormal3f(1.0f, 0.0f, 1.0f);
+	glVertex3f(halfWidth, -halfHeight, halfWidth);
 
-	// Red side - BOTTOM
-	glBegin(GL_POLYGON);
-	glColor3f(1.0, 0.0, 0.0);
-	glVertex3f(0.5, -0.5, -0.5);
-	glVertex3f(0.5, -0.5, 0.5);
-	glVertex3f(-0.5, -0.5, 0.5);
-	glVertex3f(-0.5, -0.5, -0.5);
+	//Back
+	glNormal3f(0.0f, 0.0f, -1.0f);
+	//glNormal3f(-1.0f, 0.0f, -1.0f);
+	glVertex3f(-halfWidth, -halfHeight, -halfWidth);
+	//glNormal3f(-1.0f, 0.0f, -1.0f);
+	glVertex3f(-halfWidth, halfHeight, -halfWidth);
+	//glNormal3f(1.0f, 0.0f, -1.0f);
+	glVertex3f(halfWidth, halfHeight, -halfWidth);
+	//glNormal3f(1.0f, 0.0f, -1.0f);
+	glVertex3f(halfWidth, -halfHeight, -halfWidth);
+
+	//Left
+	glNormal3f(-1.0f, 0.0f, 0.0f);
+	//glNormal3f(-1.0f, 0.0f, -1.0f);
+	glVertex3f(-halfWidth, -halfHeight, -halfWidth);
+	//glNormal3f(-1.0f, 0.0f, 1.0f);
+	glVertex3f(-halfWidth, -halfHeight, halfWidth);
+	//glNormal3f(-1.0f, 0.0f, 1.0f);
+	glVertex3f(-halfWidth, halfHeight, halfWidth);
+	//glNormal3f(-1.0f, 0.0f, -1.0f);
+	glVertex3f(-halfWidth, halfHeight, -halfWidth);
+
+	glEnd();
+}
+
+void drawSquare()
+{
+	glBegin(GL_TRIANGLE_FAN);
+	glVertex3f(-1, -1, 1);
+	glVertex3f(1, -1, 1);
+	glVertex3f(1, 1, 1);
+	glVertex3f(-1, 1, 1);
 	glEnd();
 }
