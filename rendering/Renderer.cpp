@@ -285,7 +285,7 @@ void Renderer::renderBeginner(vector<NoteToRender> notesToRender, Mat& frame)
 	glLoadIdentity();
 
 	//if less than half a second is left of the current note 
-	if (timeUntilNextNote < 700)
+	if (timeUntilNextNote < 300)
 		moveSphere(nextNote);
 
 	else
@@ -327,40 +327,47 @@ NoteToRender createNoteToRender(Note noteToProcess, Mat& original, KeyFinder key
 {
 	auto currPitch = std::get<0>(noteToProcess);
 	auto contour = keyFinder.getKeyContour(currPitch);
-	contour_t corners = keyFinder.molestPianoKeyIntoASquare(contour);
-	cv::Point2f cornersPose[4];
-
-	cornersPose[0] = corners[3];
-	cornersPose[1] = corners[2];
-	cornersPose[2] = corners[1];
-	cornersPose[3] = corners[0];
-	//cv::circle(original, cornersPose[0], 5, CV_RGB(255, 0, 0), -1);
-	//cv::circle(original, cornersPose[1], 5, CV_RGB(0, 255, 0), -1);
-	//cv::circle(original, cornersPose[2], 5, CV_RGB(0, 0, 255), -1);
-	//cv::circle(original, cornersPose[3], 5, CV_RGB(0, 0, 0), -1);
-	// transfer screen coords to camera coords
-	for (int i = 0; i < 4; i++)
-	{
-		cornersPose[i].x -= original.cols * 0.5;
-		cornersPose[i].y = -cornersPose[i].y + original.rows * 0.5;
-	}
-
-	//imshow("window", processed);
-	//imshow("original", original);
-	//find its pose 
-	float resultMatrix[16];
-	if (isBlackKey(currPitch))
-		estimateSquarePose(resultMatrix, (cv::Point2f*)cornersPose, sizeBlackTiles);
-	else
-		estimateSquarePose(resultMatrix, (cv::Point2f*)cornersPose, sizeWhiteTiles);
 	vector<float> resMat;
-	for (int j = 0; j < 16; ++j)
-		resMat.push_back(resultMatrix[j]);
 
-	auto whenToPlay = std::get<1>(noteToProcess);
-	auto howLongToPlay = std::get<2>(noteToProcess);
-	auto color = std::get<3>(noteToProcess);
-	return tuple(resMat, whenToPlay, howLongToPlay, color);
+	if (contour)
+	{
+		contour_t corners = keyFinder.molestPianoKeyIntoASquare(*contour);
+		cv::Point2f cornersPose[4];
+
+		cornersPose[0] = corners[0];
+		cornersPose[1] = corners[1];
+		cornersPose[2] = corners[2];
+		cornersPose[3] = corners[3];
+		//cv::circle(original, cornersPose[0], 5, CV_RGB(255, 0, 0), -1);
+		//cv::circle(original, cornersPose[1], 5, CV_RGB(0, 255, 0), -1);
+		//cv::circle(original, cornersPose[2], 5, CV_RGB(0, 0, 255), -1);
+		//cv::circle(original, cornersPose[3], 5, CV_RGB(0, 0, 0), -1);
+		// transfer screen coords to camera coords
+		for (int i = 0; i < 4; i++)
+		{
+			cornersPose[i].x -= original.cols * 0.5;
+			cornersPose[i].y = -cornersPose[i].y + original.rows * 0.5;
+		}
+
+		//imshow("window", processed);
+		//imshow("original", original);
+		//find its pose 
+		float resultMatrix[16];
+		if (isBlackKey(currPitch))
+			estimateSquarePose(resultMatrix, (cv::Point2f*)cornersPose, sizeBlackTiles);
+		else
+			estimateSquarePose(resultMatrix, (cv::Point2f*)cornersPose, sizeWhiteTiles);
+		for (int j = 0; j < 16; ++j)
+			resMat.push_back(resultMatrix[j]);
+
+		auto whenToPlay = std::get<1>(noteToProcess);
+		auto howLongToPlay = std::get<2>(noteToProcess);
+		auto color = std::get<3>(noteToProcess);
+		return tuple(resMat, whenToPlay, howLongToPlay, color);
+
+	}
+	return tuple(resMat, -5, 0, std::get<3>(noteToProcess));
+
 
 }
 
@@ -403,8 +410,13 @@ void Renderer::processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFi
 		}
 		//advanced mode --> play only current note
 		for (Note currNote : currNotes) {
-			if (std::get<1>(currNote) == 0) 
-				notesToRender.push_back(createNoteToRender(currNote, original, keyFinder));	
+			if (std::get<1>(currNote) == 0)
+			{
+				NoteToRender noteToRender = createNoteToRender(currNote, original, keyFinder);
+				if (std::get<1>(noteToRender) != -5)
+					notesToRender.push_back(noteToRender);
+			}
+				
 		}
 		renderer.renderAdvanced(notesToRender, original);
 
