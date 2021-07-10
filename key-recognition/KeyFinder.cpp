@@ -258,7 +258,7 @@ contour_t KeyFinder::molestPianoKeyIntoASquare(contour_t contour) {
     double leftEdgeNormInv = leftEdge.x == 0 && leftEdge.y == 0 ? 1 : 1 / norm(leftEdge);
     auto tlc = bl + leftEdge * leftEdgeNormInv * norm(bottomEdge);
     auto trc = br + leftEdge * leftEdgeNormInv * norm(bottomEdge);
-    return {tlc, trc, br, bl)};
+    return {tlc, trc, br, bl};
 }
 
 void KeyFinder::__debug__renderPianoSquares(Mat frame) {
