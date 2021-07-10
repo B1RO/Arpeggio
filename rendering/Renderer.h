@@ -13,9 +13,16 @@
 #include "../music/CBlues.h"
 #include "../music/CDur.h"
 
-
+	/**
+	   * A note to render is a tuple of
+	   * - its pose in opencv coordinates
+	   * - a time in ms in which it will be played from wrapping class initialization,
+	   * - a length of the note in ms,
+	   * - an RGBA color that it shall be represented in.
+	   */
+typedef tuple<vector<float>, int, int, tuple<float, float, float, float>> NoteToRender;
 class Renderer {
-typedef tuple<vector<float>, tuple<float, float, float, float>> NoteToRender;
+
 
 public:
 	Renderer(GLFWwindow* win):window(win){}
@@ -23,7 +30,8 @@ public:
 	void initGL();
 
 	//function that renders in the current frame
-	void render(vector<NoteToRender> notesToRender, Mat& frame);
+	void renderAdvanced(vector<NoteToRender> notesToRender, Mat& frame);
+	void renderBeginner(vector<NoteToRender> notesToRender, Mat& frame);
 	//reshaping function for the window
 	static void reshape(GLFWwindow* window, int width, int height);
 	static void processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFinder, Renderer& renderer, CMarkerFinder markerFinder);
@@ -32,7 +40,7 @@ public:
 	GLFWwindow* window;
 	CDur song;
 	bool dead = false;
-
+	bool advanced = false;
 };
 
 #endif //ARPEGGIO_RENDERER_H
