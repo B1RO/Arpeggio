@@ -217,8 +217,7 @@ void moveSphere(NoteToRender nextNote)
 
 	
 	//cout << ";ballPos.x:" << ballPos.x <<  ";ballPos.y:" << ballPos.y << ";ballPos.z:" << ballPos.z;
-	//cout << ";timeUntilNextNote: " << timeUntilNextNote <<endl;
-
+	//cout << ";timeUntilNextNote: " << timeUntilNextNote <<end;
 }
 
 void Renderer::renderBeginner(vector<NoteToRender> notesToRender, Mat& frame)
@@ -304,24 +303,24 @@ void Renderer::renderBeginner(vector<NoteToRender> notesToRender, Mat& frame)
 
 }
 
-void Renderer::reshape(GLFWwindow* window, int width, int height) {
-	// Set a whole-window viewport
-	glViewport(0, 0, (GLsizei)width, (GLsizei)height);
+void Renderer::reshape(GLFWwindow *window, int width, int height) {
+    // Set a whole-window viewport
+    glViewport(0, 0, (GLsizei) width, (GLsizei) height);
 
-	// Create a perspective projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
+    // Create a perspective projection matrix
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
 
-	// The camera should be calibrated -> a calibration results in the projection matrix -> then load the matrix
-	// -> into GL_PROJECTION
-	// -> adjustment of FOV is needed for each camera
-	float ratio = (GLfloat)width / (GLfloat)height;
-	float near = 0.01f, far = 100.f;
-	float top = tan((double)(virtual_camera_angle * M_PI / 360.0f)) * near;
-	float bottom = -top;
-	float left = ratio * bottom;
-	float right = ratio * top;
-	glFrustum(left, right, bottom, top, near, far);
+    // The camera should be calibrated -> a calibration results in the projection matrix -> then load the matrix
+    // -> into GL_PROJECTION
+    // -> adjustment of FOV is needed for each camera
+    float ratio = (GLfloat) width / (GLfloat) height;
+    float near = 0.01f, far = 100.f;
+    float top = tan((double) (virtual_camera_angle * M_PI / 360.0f)) * near;
+    float bottom = -top;
+    float left = ratio * bottom;
+    float right = ratio * top;
+    glFrustum(left, right, bottom, top, near, far);
 }
 
 NoteToRender createNoteToRender(Note noteToProcess, Mat& original, KeyFinder keyFinder)
@@ -431,7 +430,6 @@ void Renderer::processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFi
 			firstPress = true;
 		}
 		
-
 		//assume that it s always the first and the second note that needs to be played 
 		Note pair[2] = { currNotes[0], currNotes[1] };
 		for (int i = 0; i < 2; ++i)

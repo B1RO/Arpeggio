@@ -4,6 +4,10 @@
 
 #include "KeyFinder.h"
 #include "ContourScaler.h"
+#include <iostream>
+#include <functional>
+#include <vector>
+#include <numeric>
 
 
 /**
@@ -90,8 +94,20 @@ Mat KeyFinder::thresholdKeys(Mat frame) {
     return frame_threshold;
 }
 
+
+Mat KeyFinder::thresholdKeysBlack(const Mat &frame) {
+    cv::Mat invSrc = cv::Scalar::all(255) - frame;
+    Mat frame_HSV;
+    Mat frame_threshold;
+    cvtColor(invSrc, frame_HSV, COLOR_BGR2HSV);
+    int low_H = 0, low_S = 0, low_V = 242;
+    int high_H = max_value_H, high_S = max_value, high_V = max_value;
+    inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
+    return frame_threshold;
+}
+
 Mat KeyFinder::dilateKeys(Mat frame) {
-    int dilation_size = frame.cols/200;
+    int dilation_size = frame.cols / 200;
     Mat element = getStructuringElement(MORPH_RECT,
                                         Size(2 * dilation_size + 1, 2 * dilation_size + 1),
                                         Point(dilation_size, dilation_size));
@@ -121,13 +137,6 @@ int convertPitchToCOffset(Pitch pitch) {
     }
 }
 
-void KeyFinder::colorPianoKeysIntoFrame(Mat frame) {
-    auto scaled = ContourScaler::scaleContours(this->sourceFrame.cols, this->sourceFrame.rows, frame.cols, frame.rows, this->keyContours);
-    for (int i = 0; i < scaled.size(); i++) {
-        drawContours(frame, scaled, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED);
-    }
-
-}
 
 void KeyFinder::specifyCs(vector<Point> CKeys) {
     this->yellowMarkers = std::move(CKeys);
@@ -204,17 +213,23 @@ void KeyFinder::labelKey(Mat frame, Pitch pitch) {
     }
 }
 
-contour_t KeyFinder::getKeyContour(Pitch pitch) {
+std::optional<contour_t> KeyFinder::getKeyContour(Pitch pitch) {
     int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
     for (const auto &item : this->yellowMarkers) {
         auto contourIndex = this->getIndexOfContourClosestToPoint(item);
-        auto contour = this->keyContours[contourIndex + offset];
-        return contour;
+        if (contourIndex + offset < this->keyContours.size()) {
+            auto contour = this->keyContours[contourIndex + offset];
+            return std::optional<contour_t>(contour);
+        }
+        return std::nullopt;
     }
 }
 
-Point KeyFinder::getKeyCentroid(Pitch pitch) {
-    return getContourCentroid(getKeyContour(pitch));
+std::optional<Point> KeyFinder::getKeyCentroid(Pitch pitch) {
+    auto contour = getKeyContour(pitch);
+    if (contour.has_value())
+        return getContourCentroid(contour.value());
+    return std::nullopt;
 }
 
 Mat KeyFinder::thresholdKeysGrayscale(Mat frame) {
@@ -248,7 +263,8 @@ contour_t KeyFinder::molestPianoKeyIntoASquare(contour_t contour) {
 void KeyFinder::__debug__renderPianoSquares(Mat frame) {
     for (const auto &item : this->keyContours) {
         auto square = this->molestPianoKeyIntoASquare(item);
-        auto scaled = ContourScaler::scaleContour(this->sourceFrame.cols, this->sourceFrame.rows, frame.cols, frame.rows, square);
+        auto scaled = ContourScaler::scaleContour(this->sourceFrame.cols, this->sourceFrame.rows, frame.cols,
+                                                  frame.rows, square);
         drawContours(frame, vector<vector<Point> >(1, scaled), -1, Scalar(rand() & 256, rand() % 256, rand() % 256),
                      FILLED);
     }
@@ -280,12 +296,85 @@ vector<contour_t> KeyFinder::getKeysAsSquares() {
     return out;
 }
 
-
 vector<contour_t> KeyFinder::getKeysAsRectangles() {
     std::vector<contour_t> out(this->keyContours.size());
     transform(this->keyContours.begin(), this->keyContours.end(), back_inserter(out),
               [this](auto contour) { return molestPianoKeyIntoARectangle(contour); });
     return out;
+}
+
+
+vector<double> getAreas(contour_vector_t contours) {
+    vector<double> areas(contours.size());
+    for (int i = 0; i < contours.size(); i++) {
+        areas.push_back(contourArea(contours[i]));
+    }
+    return areas;
+}
+
+double getAverageArea(vector<double> areas) {
+    return std::accumulate(areas.begin(), areas.end(), 0.0) / areas.size();
+}
+
+
+double getAreaStdDev(vector<double> areas) {
+    double mean = getAverageArea(areas);
+    double sq_sum = inner_product(areas.begin(), areas.end(), areas.begin(), 0.0);
+    double stdev = sqrt(sq_sum / areas.size() - mean * mean);
+    return stdev;
+}
+
+contour_vector_t getContoursWithAreaCloseWithinMean(contour_vector_t in) {
+    vector<double> areas = getAreas(in);
+    for (int i = 0; i < areas.size(); i++) {
+        cout << areas[i] << endl;
+    }
+    double average = getAverageArea(areas);
+    cout << "Average: " << average << endl << endl << endl;
+    double stddev = getAreaStdDev(areas);
+    contour_vector_t out;
+    for (const auto &item : in) {
+        if (abs(contourArea(item) - average) < stddev / 4) {
+            out.push_back(item);
+        }
+    }
+    return out;
+}
+
+Mat KeyFinder::processFrameBlackKeys(Mat frame) {
+    this->sourceFrame = frame;
+    auto dilation_size = 1;
+    Mat element = getStructuringElement(MORPH_RECT,
+                                        Size(2 * dilation_size + 1, 2 * dilation_size + 1),
+                                        Point(dilation_size, dilation_size));
+    auto processedFrame = thresholdKeysBlack(frame);
+    contour_vector_t allContours;
+    findContours(processedFrame, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
+
+    contour_vector_t filteredContours;
+    for (int i = 0; i < allContours.size(); i++) {
+        if (allContours[i].size() > 4 && contourArea(allContours[i]) / (frame.rows * frame.cols) >= 0.005)
+            filteredContours.push_back(allContours[i]);
+    }
+    filteredContours = getContoursWithAreaCloseWithinMean(filteredContours);
+
+    //sort contours by centroid x position
+    sort(filteredContours.begin(), filteredContours.end(),
+         [](const contour_t &a, const contour_t &b) -> bool {
+             return getContourCentroid(a).x < getContourCentroid(b).x;
+         });
+
+    this->blackKeyContours = filteredContours;
+    return processedFrame;
+}
+
+void KeyFinder::colorBlackPianoKeysIntoFrame(Mat frame) {
+    auto scaled = ContourScaler::scaleContours(this->sourceFrame.cols, this->sourceFrame.rows, frame.cols, frame.rows,
+                                               this->blackKeyContours);
+
+    for (int i = 0; i < scaled.size(); i++) {
+        drawContours(frame, scaled, i, Scalar(rand() & 256, rand() % 256, rand() % 256), FILLED);
+    }
 }
 
 
