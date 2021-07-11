@@ -38,7 +38,6 @@ Position ballPos;
 double ballSpeed = 0.0005;
 double v0 = 0.0003;
 bool firstTime = true;
-auto theta = 1000; //in ms 
 auto tPrev = 0;
 bool firstPress = true;
 
@@ -50,6 +49,8 @@ int timeUntilNextNote;
 double v_yi;
 
 int maxTimeToHoldNote = 0;
+
+bool sphere = false;
 
 void Renderer::initGL()
 {
@@ -90,7 +91,7 @@ void Renderer::initGL()
 
 float calculateSizeCuboid(int timeLeftToPlay)
 {
-	return float(timeLeftToPlay) / float(maxTimeToHoldNote) * 2.9;
+	return float(timeLeftToPlay) / float(maxTimeToHoldNote) * 6;
 }
 
 void Renderer::renderAdvanced(vector<NoteToRender> notesToRender, Mat& frame)
@@ -139,16 +140,25 @@ void Renderer::renderAdvanced(vector<NoteToRender> notesToRender, Mat& frame)
 		//resultTransposedMatrix[1] -= 0.5;
 		glLoadMatrixf(resultTransposedMatrix);
 
-		glScalef(0.15, 0.15, 0.15);
 		auto color = std::get<3>(currNote);
 		glColor4f(std::get<0>(color), std::get<1>(color), std::get<2>(color), std::get<3>(color));
 
-		//TODO, decide here which strategy to take
-		//drawCuboid(std::get<2>(currNote) / 200, std::get<2>(currNote) / 200);
-		//drawCuboid(std::get<2>(currNote) / 200, 2);
+		if (sphere)
+			drawSphere(0.1, 10, 10);
+		else
+		{
+			glScalef(0.15, 0.15, 0.15);
 
-		drawCuboid(calculateSizeCuboid(std::get<2>(currNote)), calculateSizeCuboid(std::get<2>(currNote)));
-		//drawCuboid(2.9, 2.9);
+			//TODO, decide here which strategy to take
+			//drawCuboid(std::get<2>(currNote) / 200, std::get<2>(currNote) / 200);
+			//drawCuboid(std::get<2>(currNote) / 200, 2);
+
+			//drawCuboid(calculateSizeCuboid(std::get<2>(currNote)), calculateSizeCuboid(std::get<2>(currNote)));
+			drawCuboid(calculateSizeCuboid(std::get<2>(currNote)), 2);
+			//drawCuboid(2.9, 2.9);
+		}
+		
+	
 
 	}
 }
@@ -179,6 +189,7 @@ void moveSphere(NoteToRender nextNote)
 	//	ballPos.y += (vector[1] / length) * ballSpeed * deltaTime;
 	//	ballPos.z += (vector[2] / length) * ballSpeed * deltaTime;
 	//}
+
 	if (timeUntilNextNote < 100)
 		timeUntilNextNote = 500;
 	
@@ -285,7 +296,7 @@ void Renderer::renderBeginner(vector<NoteToRender> notesToRender, Mat& frame)
 	glLoadIdentity();
 
 	//if less than half a second is left of the current note 
-	if (timeUntilNextNote < 300)
+	if (timeUntilNextNote < 500)
 		moveSphere(nextNote);
 
 	else
@@ -398,7 +409,7 @@ void Renderer::processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFi
 		return;
 	}
 		
-	vector<Note> currNotes = renderer.song.notes();
+	vector<Note> currNotes = renderer.song->notes();
 	vector<NoteToRender> notesToRender;
 
 	if (renderer.advanced)
@@ -429,6 +440,7 @@ void Renderer::processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFi
 		if (nrCurrentNotes < 2)
 		{
 			renderer.advanced = true;
+			sphere = true;
 			return;
 		}
 		

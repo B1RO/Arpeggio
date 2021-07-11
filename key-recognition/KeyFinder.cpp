@@ -328,10 +328,10 @@ double getAreaStdDev(vector<double> areas) {
 contour_vector_t getContoursWithAreaCloseWithinMean(contour_vector_t in) {
     vector<double> areas = getAreas(in);
     for (int i = 0; i < areas.size(); i++) {
-        cout << areas[i] << endl;
+        //cout << areas[i] << endl;
     }
     double average = getAverageArea(areas);
-    cout << "Average: " << average << endl << endl << endl;
+    //cout << "Average: " << average << endl << endl << endl;
     double stddev = getAreaStdDev(areas);
     contour_vector_t out;
     for (const auto &item : in) {
