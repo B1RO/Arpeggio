@@ -18,31 +18,42 @@
 char convertPitchToChar(Pitch pitch) {
     if (pitch == Pitch::A0 || pitch == Pitch::A1 || pitch == Pitch::A2 ||
         pitch == Pitch::A3 || pitch == Pitch::A4 || pitch == Pitch::A5 ||
-        pitch == Pitch::A6 || pitch == Pitch::A7) {
+        pitch == Pitch::A6 || pitch == Pitch::A7 || pitch == Pitch::Asharp0 || pitch == Pitch::Asharp1 ||
+        pitch == Pitch::Asharp2 || pitch == Pitch::Asharp3 || pitch == Pitch::Asharp4 || pitch == Pitch::Asharp5 ||
+        pitch == Pitch::Asharp6 || pitch == Pitch::Asharp7) {
         return 'A';
     } else if (pitch == Pitch::B0 || pitch == Pitch::B1 || pitch == Pitch::B2 ||
                pitch == Pitch::B3 || pitch == Pitch::B4 || pitch == Pitch::B5 || pitch == Pitch::B6 ||
-               pitch == Pitch::B7) {
+               pitch == Pitch::B7 || pitch == Pitch::Bflat0 || pitch == Pitch::Bflat0 ||
+               pitch == Pitch::Bflat0 || pitch == Pitch::Bflat1 || pitch == Pitch::Bflat2 || pitch == Pitch::Bflat3 ||
+               pitch == Pitch::Bflat4 || pitch == Pitch::Bflat5 || pitch == Pitch::Bflat6 || pitch == Pitch::Bflat7) {
         return 'B';
     } else if (pitch == Pitch::C1 || pitch == Pitch::C2 ||
                pitch == Pitch::C3 || pitch == Pitch::C4 || pitch == Pitch::C5 || pitch == Pitch::C6 ||
-               pitch == Pitch::C7 || pitch == Pitch::C8) {
+               pitch == Pitch::C7 || pitch == Pitch::C8 || pitch == Pitch::Csharp1 || pitch == Pitch::Csharp2 ||
+               pitch == Pitch::Csharp3 || pitch == Pitch::Csharp4 || pitch == Pitch::Csharp5 ||
+               pitch == Pitch::Csharp6 || pitch == Pitch::Csharp7) {
         return 'C';
     } else if (pitch == Pitch::D1 || pitch == Pitch::D2 ||
                pitch == Pitch::D3 || pitch == Pitch::D4 || pitch == Pitch::D5 || pitch == Pitch::D6 ||
-               pitch == Pitch::D7) {
+               pitch == Pitch::D7 || pitch == Pitch::Dflat1 || pitch == Pitch::Dflat2 || pitch == Pitch::Dflat3 ||
+               pitch == Pitch::Dflat4 || pitch == Pitch::Dflat5 || pitch == Pitch::Dflat6 || pitch == Pitch::Dflat7) {
         return 'D';
     } else if (pitch == Pitch::E1 || pitch == Pitch::E2 ||
                pitch == Pitch::E3 || pitch == Pitch::E4 || pitch == Pitch::E5 || pitch == Pitch::E6 ||
-               pitch == Pitch::E7) {
+               pitch == Pitch::E7 || pitch == Pitch::Eflat1 || pitch == Pitch::Eflat2 || pitch == Pitch::Eflat3 ||
+               pitch == Pitch::Eflat4 || pitch == Pitch::Eflat5 || pitch == Pitch::Eflat6 || pitch == Pitch::Eflat7) {
         return 'E';
     } else if (pitch == Pitch::F1 || pitch == Pitch::F2 ||
                pitch == Pitch::F3 || pitch == Pitch::F4 || pitch == Pitch::F5 || pitch == Pitch::F6 ||
-               pitch == Pitch::F7) {
+               pitch == Pitch::F7 || pitch == Pitch::Fsharp1 || pitch == Pitch::Fsharp2 || pitch == Pitch::Fsharp3 ||
+               pitch == Pitch::Fsharp4 || pitch == Pitch::Fsharp5 || pitch == Pitch::Fsharp6 ||
+               pitch == Pitch::Fsharp7) {
         return 'F';
     } else if (pitch == Pitch::G1 || pitch == Pitch::G2 ||
                pitch == Pitch::G3 || pitch == Pitch::G4 || pitch == Pitch::G5 || pitch == Pitch::G6 ||
-               pitch == Pitch::G7) {
+               pitch == Pitch::G7 || pitch == Pitch::Gflat1 || pitch == Pitch::Gflat2 || pitch == Pitch::Gflat3 ||
+               pitch == Pitch::Gflat4 || pitch == Pitch::Gflat5 || pitch == Pitch::Gflat6 || pitch == Pitch::Gflat7) {
         return 'G';
     }
     return 'X';
@@ -97,8 +108,8 @@ Mat KeyFinder::thresholdKeys(Mat frame) {
 Mat KeyFinder::getPianoMask(const Mat &frame) {
     Mat p;
     cvtColor(frame, p, CV_BGR2GRAY);
-    threshold(p, p, 80, 255, THRESH_BINARY);
-    int erosion_size = 2;
+    threshold(p, p, 180, 255, THRESH_BINARY);
+    int erosion_size = 7;
     Mat element = getStructuringElement(MORPH_RECT,
                                         Size(2 * erosion_size + 1, 2 * erosion_size + 1),
                                         Point(erosion_size, erosion_size));
@@ -125,9 +136,9 @@ Mat KeyFinder::getPianoMask(const Mat &frame) {
 //    drawContours(frame, allContours, maxIndex, Scalar(255, 0, 0), 3);
     Point2f points[4];
 
-pianoRect.points(points);
+    pianoRect.points(points);
     cv::Point vertices[4];
-    for(int i = 0; i < 4; ++i){
+    for (int i = 0; i < 4; ++i) {
         vertices[i] = points[i];
     }
     line(frame, vertices[0], vertices[1], Scalar(255, 0, 0));
@@ -147,7 +158,7 @@ Mat KeyFinder::thresholdKeysBlack(const Mat &frame) {
     Mat frame_HSV;
     Mat frame_threshold;
     cvtColor(invSrc, frame_HSV, COLOR_BGR2HSV);
-    int low_H = 0, low_S = 0, low_V = 242;
+    int low_H = 0, low_S = 0, low_V = 256;
     int high_H = max_value_H, high_S = max_value, high_V = max_value;
     inRange(frame_HSV, Scalar(low_H, low_S, low_V), Scalar(high_H, high_S, high_V), frame_threshold);
 
@@ -217,22 +228,69 @@ void KeyFinder::__debug__renderCCentroids(Mat frame) {
     }
 }
 
-int convertPianoKeyToOffsetFromC(char key) {
-    switch (key) {
-        case 'C':
-            return 0;
-        case 'D':
-            return 1;
-        case 'E':
-            return 2;
-        case 'F':
-            return 3;
-        case 'G':
-            return 4;
-        case 'A':
-            return 5;
-        case 'B':
-            return 6;
+bool isBlackKey(Pitch pitch) {
+    switch (pitch) {
+        case Pitch::Asharp0:
+        case Pitch::Csharp1:
+        case Pitch::Dsharp1:
+        case Pitch::Fsharp1:
+        case Pitch::Gsharp1:
+        case Pitch::Asharp1:
+        case Pitch::Csharp2:
+        case Pitch::Dsharp2:
+        case Pitch::Fsharp2:
+        case Pitch::Gsharp2:
+        case Pitch::Asharp2:
+        case Pitch::Csharp3:
+        case Pitch::Dsharp3:
+        case Pitch::Fsharp3:
+        case Pitch::Gsharp3:
+        case Pitch::Asharp3:
+        case Pitch::Csharp4:
+        case Pitch::Dsharp4:
+        case Pitch::Fsharp4:
+        case Pitch::Gsharp4:
+        case Pitch::Asharp4:
+        case Pitch::Csharp5:
+        case Pitch::Dsharp5:
+        case Pitch::Fsharp5:
+        case Pitch::Gsharp5:
+        case Pitch::Asharp5:
+        case Pitch::Csharp6:
+        case Pitch::Gsharp6:
+        case Pitch::Csharp7:
+        case Pitch::Dsharp7:
+        case Pitch::Fsharp7:
+        case Pitch::Gsharp7:
+        case Pitch::Asharp7:
+            return true;
+        default:
+            return false;
+    }
+}
+
+
+int convertPianoKeyToOffsetFromC(Pitch pitch) {
+    bool isBlack = isBlackKey(pitch);
+    if (!isBlack) {
+        switch (convertPitchToChar(pitch)) {
+            case 'C':
+                return 0;
+            case 'D':
+                return 1;
+            case 'E':
+                return 2;
+            case 'F':
+                return 3;
+            case 'G':
+                return 4;
+            case 'A':
+                return 5;
+            case 'B':
+                return 6;
+        }
+    } else {
+        return ((int) pitch % 12) - 1;
     }
 }
 
@@ -243,20 +301,32 @@ void KeyFinder::colorKey(Mat frame, Pitch pitch, Scalar color) {
                                 {26,  35, 126},
                                 {1,   87, 155},
                                 {0,   77, 64}};
-    int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
+    bool isBlack = isBlackKey(pitch);
+    int offset = convertPianoKeyToOffsetFromC(pitch);
     for (const auto &item : this->yellowMarkers) {
-        auto contourIndex = this->getIndexOfContourClosestToPoint(item);
-        drawContours(frame, vector<vector<Point> >(1, this->keyContours[contourIndex + offset]), 0, keyColors[offset],
-                     FILLED);
+        auto contourIndex = this->getIndexOfContourClosestToPoint(item, isBlack?blackKeyContours:this->keyContours);
+        if (contourIndex + offset <= this->keyContours.size()) {
+            if(isBlack)
+            {
+                 drawContours(frame, vector<vector<Point> >(1, this->blackKeyContours[contourIndex + offset]), 0,
+                             keyColors[offset],
+                             FILLED);
+            }
+            else {
+                drawContours(frame, vector<vector<Point> >(1, this->keyContours[contourIndex + offset]), 0,
+                             keyColors[offset],
+                             FILLED);
+            }
+        }
     }
 }
 
-int KeyFinder::getIndexOfContourClosestToPoint(Point point) {
+int KeyFinder::getIndexOfContourClosestToPoint(Point point, contour_vector_t contours) {
     float minDist = 100000;
     int minIndex = 0;
-    for (int i = 0; i < this->keyContours.size(); i++) {
+    for (int i = 0; i < contours.size(); i++) {
 
-        auto centroid = getContourCentroid(this->keyContours[i]);
+        auto centroid = getContourCentroid(contours[i]);
         auto dist = cv::norm(centroid - point);
         if (dist < minDist) {
             minIndex = i;
@@ -267,9 +337,9 @@ int KeyFinder::getIndexOfContourClosestToPoint(Point point) {
 }
 
 void KeyFinder::labelKey(Mat frame, Pitch pitch) {
-    int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
+    int offset = convertPianoKeyToOffsetFromC(pitch);
     for (const auto &item : this->yellowMarkers) {
-        auto contourIndex = this->getIndexOfContourClosestToPoint(item);
+        auto contourIndex = this->getIndexOfContourClosestToPoint(item, keyContours);
         auto contour = this->keyContours[contourIndex + offset];
         auto centroid = getContourCentroid(contour);
         putText(frame, std::string(1, convertPitchToChar(pitch)), centroid - Point(5, -5), FONT_HERSHEY_DUPLEX, 0.5,
@@ -278,10 +348,11 @@ void KeyFinder::labelKey(Mat frame, Pitch pitch) {
 }
 
 std::optional<contour_t> KeyFinder::getKeyContour(Pitch pitch) {
-    int offset = convertPianoKeyToOffsetFromC(convertPitchToChar(pitch));
+    int offset = convertPianoKeyToOffsetFromC(pitch);
+    bool isBlack = isBlackKey(pitch);
     for (const auto &item : this->yellowMarkers) {
-        auto contourIndex = this->getIndexOfContourClosestToPoint(item);
-        if (contourIndex + offset < this->keyContours.size()) {
+        auto contourIndex = this->getIndexOfContourClosestToPoint(item, isBlack?blackKeyContours:keyContours);
+        if (contourIndex + offset < (isBlack?blackKeyContours:this->keyContours).size()) {
             auto contour = this->keyContours[contourIndex + offset];
             return std::optional<contour_t>(contour);
         }
@@ -412,16 +483,13 @@ Mat KeyFinder::processFrameBlackKeys(Mat frame) {
                                         Size(2 * dilation_size + 1, 2 * dilation_size + 1),
                                         Point(dilation_size, dilation_size));
     auto processedFrame = thresholdKeysBlack(frame);
-    return processedFrame;
     contour_vector_t allContours;
     findContours(processedFrame, allContours, RETR_LIST, CHAIN_APPROX_SIMPLE);
 
     contour_vector_t filteredContours;
     for (int i = 0; i < allContours.size(); i++) {
-        if (allContours[i].size() > 4 && contourArea(allContours[i]) / (frame.rows * frame.cols) >= 0.005)
-            filteredContours.push_back(allContours[i]);
+        filteredContours.push_back(allContours[i]);
     }
-    filteredContours = getContoursWithAreaCloseWithinMean(filteredContours);
 
     //sort contours by centroid x position
     sort(filteredContours.begin(), filteredContours.end(),

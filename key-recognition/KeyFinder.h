@@ -26,15 +26,15 @@ public:
     void specifyCs(vector<Point> CKeys);
     void colorKey(Mat frame, Pitch pitch, Scalar color);
     void labelKey(Mat frame, Pitch pitch);
-    optional<contour_t> getKeyContour(Pitch pitch);
     optional<Point> getKeyCentroid(Pitch pitch);
+    optional<contour_t> getKeyContour(Pitch pitch);
     static contour_t molestPianoKeyIntoASquare(contour_t contour);
     static contour_t molestPianoKeyIntoARectangle(contour_t contour);
     vector<contour_t> getKeysAsSquares();
     vector<contour_t> getKeysAsRectangles();
 private:
     Mat sourceFrame;
-    int getIndexOfContourClosestToPoint(Point point);
+    int getIndexOfContourClosestToPoint(Point point, contour_vector_t contours);
     std::vector<Point> yellowMarkers;
     std::vector<contour_t> keyContours;
     //I don't own a piano please don't judge me I don't know how they are called.I am sure the left leftmost black key is called Josh though.
