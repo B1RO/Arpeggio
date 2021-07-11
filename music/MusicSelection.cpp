@@ -4,7 +4,11 @@
 #include "./CBlues.h"
 #include "./Midi.h"
 #include "./MicPitchParser.h"
-#include <cstdio>
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+    #include <stdio.h>
+#else
+    #include <cstdio>
+#endif
 
 using namespace std;
 
@@ -15,40 +19,44 @@ namespace music {
 
         while(true) {
             system("clear");
-            cout << "  BEGINNER                 INTERMEDIATE" << endl
-                 << "  --------                 ------------" << endl << endl
+            cout << "    BEGINNER                     INTERMEDIATE" << endl
+                 << "    --------                     ------------" << endl << endl
                  << (i == 0 && j == 0 ? ">" : " ")
-                 << " C Major                  "
+                 << "1. C Major                  "
                  << (i == 0 && j == 1 ? ">" : " ")
-                 << " C Major" << endl << endl
+                 << "2. C Major" << endl << endl
 
                  << (i == 1 && j == 0 ? ">" : " ")
-                 << " C Blues                  "
+                 << "3. C Blues                  "
                  << (i == 1 && j == 1 ? ">" : " ")
-                 << " C Blues" << endl << endl
+                 << "4. C Blues" << endl << endl
 
                  << (i == 2 && j == 0 ? ">" : " ")
-                 << " Der Mond ist aufgegangen "
+                 << "5. Der Mond ist aufgegangen "
                  << (i == 2 && j == 1 ? ">" : " ")
-                 << " Der Mond ist aufgegangen" << endl
+                 << "6. Der Mond ist aufgegangen" << endl
         
-                 << "  (MIDI)                     (MIDI)" << endl << endl
+                 << "    (MIDI)                       (MIDI)" << endl << endl
 
-                 << "                           "
+                 << "                             "
                  << (i == 3 && j == 1 ? ">" : " ")
-                 << " Bach - Bereite dich Zion" << endl
+                 << "7. Bach - Bereite dich Zion" << endl
 
-                 << "                             (MIDI)" << endl << endl
+                 << "                                 (MIDI)" << endl << endl
 
-                 << "                           "
+                 << "                             "
                  << (i == 4 && j == 1 ? ">" : " ")
-                 << " Pitch Detection" << endl
-                 << "                             (Mic)" << endl;
+                 << "8. Pitch Detection" << endl
+                 << "                                 (Mic)" << endl;
 
             
-            system("stty raw");
-            char c = getchar();
-            system("stty cooked");
+            #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
+                char c = getchar();
+            #else
+                system("stty raw");
+                char c = getchar();
+                system("stty cooked");
+            #endif
             
             switch(c) {
                 case 'A':
@@ -78,6 +86,22 @@ namespace music {
                         m = new MicPitchParser();
                     }
                     return make_tuple(m, i == 0 ? false : true);
+                case '1':
+                    return make_tuple(new CDur(), false);
+                case '2':
+                    return make_tuple(new CDur(), true);
+                case '3':
+                    return make_tuple(new CBlues(), false);
+                case '4':
+                    return make_tuple(new CBlues(), true);
+                case '5':
+                    return make_tuple(new Midi("../example_mond.mid"), false);
+                case '6':
+                    return make_tuple(new Midi("../example_mond.mid"), true);
+                case '7':
+                    return make_tuple(new Midi("../example_bach.mid"), true);
+                case '8':
+                    return make_tuple(new MicPitchParser(), true);
             }
         }
 
