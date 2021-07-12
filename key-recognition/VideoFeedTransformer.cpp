@@ -144,5 +144,5 @@ Mat VideoFeedTransformer::processFrame(Mat frame) {
     markerFinder.processFrame(frame);
     auto processedBlack = keyFinder.processFrameBlackKeys(frame);
     keyFinder.specifyCs(getCentroidsFromContours(markerFinder.getYellowMarkers()));
-    return processed;
+    return processedBlack;
 }
