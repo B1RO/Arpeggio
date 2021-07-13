@@ -18,6 +18,9 @@ namespace music {
          */
         vector<Note> notes();
     protected:
+        /**
+         * after the constructor was called, this contains all notes from the .mid file.
+         */
         vector<Note> importedNotes;
     };
 }

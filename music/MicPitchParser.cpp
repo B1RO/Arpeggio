@@ -1,6 +1,9 @@
 /**
  * Partially based on https://github.com/bejayoharen/guitartuner by Bjorn Roche,
  * which is available under the BSD license.
+ * For explanation how pitch tracking works with FFT, please refer to his
+ * excellent article at
+ * http://blog.bjornroche.com/2012/07/frequency-detection-using-fft-aka-pitch.html
  **/
 
 #include "./MicPitchParser.h"
@@ -14,6 +17,9 @@
 using namespace std;
 
 namespace music {
+    /**
+     * Starts up port audio, listens on the default audio input
+     **/
     MicPitchParser::MicPitchParser(int sampleRate, int fftSize, int fftExpSize) {
         this->sampleRate = sampleRate;
         this->fftSize = fftSize;
@@ -32,7 +38,7 @@ namespace music {
         mem1[0] = 0; mem1[1] = 0; mem1[2] = 0; mem1[3] = 0;
         mem2[0] = 0; mem2[1] = 0; mem2[2] = 0; mem2[3] = 0;
 
-        //freq/note tables
+        // freq/note tables
         for( int i=0; i<fftSize; ++i ) {
             freqTable[i] = ( sampleRate * i ) / (float) ( fftSize );
         }
@@ -74,6 +80,10 @@ namespace music {
         return;
     }
 
+    /**
+     * Stops the audio recording and performs cleanup in case of a destruction
+     * (Usually at the end of the program)
+     **/
     MicPitchParser::~MicPitchParser() {
         PaError err = Pa_StopStream( stream );
         if( err != paNoError ) {
@@ -83,10 +93,11 @@ namespace music {
         // cleanup
         destroyfft( fft );
         Pa_Terminate();
-
-        // TODO there are some other arrays with new that have to be cleaned
     }
 
+    /**
+     * Stops the audio recording and performs cleanup in case of an error
+     **/
     void MicPitchParser::abort(PaError err) {
         if( stream ) {
             Pa_AbortStream( stream );
@@ -100,6 +111,13 @@ namespace music {
         return;
     }
 
+    /**
+     * Applies FFT to the last recorded section and finds out the note that is
+     * currently being played. Analyzing the spectrum might not be the optimal
+     * way to determine the note, but it has the advantage that this could be
+     * modified in the future to display even more information, such as
+     * overtones, and even fitting musical scales.
+     **/
     vector<Note> MicPitchParser::notes() {
         float data[fftSize];
         float datai[fftSize];
@@ -119,7 +137,7 @@ namespace music {
             datai[j] = 0;
         applyfft( fft, data, datai, false );
 
-        //find the peak
+        // find the peak
         float maxVal = -1;
         int maxIndex = -1;
         for( int j=0; j<fftSize/2; ++j ) {
@@ -139,6 +157,10 @@ namespace music {
         };
     }
 
+    /**
+     * this is the callback function that is being called by PortAudio when
+     * enough data has been recorded
+     **/
     int MicPitchParser::paCallback(
         const void *inputBuffer,
         void *outputBuffer,

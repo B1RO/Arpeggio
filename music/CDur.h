@@ -9,8 +9,7 @@ namespace music {
     class CDur : public ContinuousMusic {
     public:
         /**
-         * The notes of the C major scale. Starts with all at once,
-         * then ordered upwards and downwards
+         * The notes of the C major scale. Goes upwards and then downwards.
          */
         vector<Note> notes();
     };

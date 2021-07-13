@@ -14,6 +14,10 @@ namespace music {
      * The algorithm uses Fast Fourier Transform, so we get a lot more audio information than
      * just the pitch - I plan to add a class that is based on this one that shows the user
      * overtones or even fitting scales. I'd like to see how good this works first though.
+     *
+     * This class is not added by default, because it requires the additional dependency PortAudio.
+     * If you want to use MicPitchParser, you need to install it, uncomment all uses of this
+     * class and PortAudio and modify your CMake file.
      **/
     class MicPitchParser : public Music {
     public:
