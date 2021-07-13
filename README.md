@@ -8,7 +8,7 @@ This project should be seen more as a proof of concept than an actual program to
 ## External libraries and references
 Name | Notes | License
 -----|-------|--------
-[libfft](https://github.com/bejayoharen/guitartuner/blob/master/src/libfft.c) | (C) 1989 by Jef Poskanzer. <br/> Included in the repository at `/music/libfft`. | MIT 
+[libfft](https://github.com/bejayoharen/guitartuner/blob/master/src/libfft.c) | (C) 1989 by Jef Poskanzer. <br/> Included in the repository at `/music/libfft`. | BSD 
 [guitartuner](https://github.com/bejayoharen/guitartuner) | (C) 2012 by Bjorn Roche. <br/> The code in `/music/MicPitchParser.cpp` is partially based on that project. | [BSD](https://github.com/bejayoharen/guitartuner#Copyright)
 [midifile](https://github.com/craigsapp/midifile) | (C) 1999-2018, Craig Stuart Sapp. <br/> Partially included in the repository at `/music/midifile` | [BSD 2-Clause](https://github.com/craigsapp/midifile/blob/master/LICENSE.txt)
 [PortAudio](http://portaudio.com/) | (C) 1999-2011 Ross Bencina and Phil Burk. <br/> By default, lines relating to `MidiPitchParser` are commented out, so installing portaudio is not required. To use the whole project, it needs to be [installed](http://files.portaudio.com/docs/v19-doxydocs/tutorial_start.html).| [MIT](http://files.portaudio.com/docs/v19-doxydocs/License.html)
