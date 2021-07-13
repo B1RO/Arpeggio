@@ -22,31 +22,40 @@
 	   */
 typedef tuple<vector<float>, int, int, tuple<float, float, float, float>> NoteToRender;
 
+
+//Renderer class is responsible for preparing and generating the actual rendering 
 class Renderer {
 
 public:
+
+	//constructor which enables the setup of the window, current song chosen by the user and mode, 
 	Renderer(GLFWwindow* win, Music *song, bool mode):window(win){
 		this->song = song;
 		this->advanced = mode;
 	}
-	
-	//OpenGL initialization function
+
+	//initGL function adapted from tutorials, enables initialization and setup of openGL
 	void initGL();
-	//reshaping function for the window
+
+	//Reshaping function for the window
 	static void reshape(GLFWwindow* window, int width, int height);
 
-	//function that renders in the current frame
+	//Functions that render in the current frame
 	void renderAdvanced(vector<NoteToRender> notesToRender, Mat& frame);
 	void renderBeginner(vector<NoteToRender> notesToRender, Mat& frame);
 
+	/**
+	* Function that prepares the rendering.
+	* - accesses the 4 key contours per key 
+	* - computes pose for each key  
+	*/
 	static void processFrame(cv::Mat original, cv::Mat processed, KeyFinder keyFinder, Renderer& renderer, CMarkerFinder markerFinder);
 	
-	GLFWwindow* window;
-	Music *song;
-	bool advanced = false;
+	GLFWwindow* window; //openGL window in which both the read frame and rendering is combined 
+	Music *song; //current song chosen by the user 
+	bool advanced = false; //defines whether the current mode is beginner or advanced
 
-
-	bool dead = false;
+	bool dead = false; //indicates whether the window has been closed
 };
 
 #endif //ARPEGGIO_RENDERER_H
