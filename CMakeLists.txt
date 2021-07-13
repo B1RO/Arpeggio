@@ -1,17 +1,15 @@
 cmake_minimum_required(VERSION 3.19)
 project(Arpeggio)
-find_package( OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
 set(CMAKE_CXX_STANDARD 20)
-# set(glfw3_DIR .\\GLFW)
+set(glfw3_DIR .\\GLFW)
 list(APPEND CMAKE_PREFIX_PATH "./glew-2.1.0-win32/glew-2.1.0")
 find_package(GLEW REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
-# add_subdirectory(./GLFW)
+add_subdirectory(./GLFW)
 include_directories(${GLEW_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})
 
 
 add_executable(Arpeggio main.cpp music/Pitch.h music/CBlues.h music/CBlues.cpp music/CDur.h music/CDur.cpp music/ContinuousMusic.h music/ContinuousMusic.cpp  music/Music.h music/Music.cpp music/MusicSelection.h music/MusicSelection.cpp rendering/Renderer.h rendering/Renderer.cpp  key-recognition/KeyFinder.cpp key-recognition/KeyFinder.h key-recognition/VideoFeedTransformer.cpp key-recognition/VideoFeedTransformer.h key-recognition/CMarkerFinder.cpp key-recognition/CMarkerFinder.h key-recognition/ContourScaler.h music/Midi.h music/Midi.cpp music/midifile/MidiFile.h music/midifile/MidiFile.cpp music/midifile/MidiEvent.h music/midifile/MidiEvent.cpp music/midifile/Binasc.h music/midifile/Binasc.cpp music/midifile/MidiEventList.h music/midifile/MidiEventList.cpp  music/midifile/MidiMessage.h music/midifile/MidiMessage.cpp music/libfft/libfft.cpp music/libfft/libfft.h)
-
 target_link_libraries( ${PROJECT_NAME} ${OpenCV_LIBS} ${GLEW_LIBRARIES} glfw ${OPENGL_LIBRARIES} -lportaudio -lcurses)

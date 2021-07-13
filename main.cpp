@@ -26,11 +26,10 @@ const int camera_height = 480;
 //const int camera_height = 2160;
 
 void initVideoStream(cv::VideoCapture& cap) {
-	auto path = "C:\\Code\\Arpeggio\\sample_video1.mp4";
+	auto path = "C:\\Code\\Arpeggio\\sample_video_1.mp4";
 	if (cap.isOpened())
 		cap.release();
 
-	cap.open(1);
 	if (cap.isOpened() == false) {
 		std::cout << "No webcam found, using a video file" << std::endl;
 		cap.open(path);
