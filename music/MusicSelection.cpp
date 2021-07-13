@@ -3,7 +3,7 @@
 #include "./CDur.h"
 #include "./CBlues.h"
 #include "./Midi.h"
-#include "./MicPitchParser.h"
+//#include "./MicPitchParser.h"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
     #include <stdio.h>
 #else
@@ -83,7 +83,7 @@ namespace music {
                     } else if(i == 3) {
                         m = new Midi("../example_bach.mid");
                     } else if(i == 4) {
-                        m = new MicPitchParser();
+                      //  m = new MicPitchParser();
                     }
                     return make_tuple(m, i == 0 ? false : true);
                 case '1':
@@ -100,8 +100,8 @@ namespace music {
                     return make_tuple(new Midi("../example_mond.mid"), true);
                 case '7':
                     return make_tuple(new Midi("../example_bach.mid"), true);
-                case '8':
-                    return make_tuple(new MicPitchParser(), true);
+                //case '8':
+                    //return make_tuple(new MicPitchParser(), true);
             }
         }
 
