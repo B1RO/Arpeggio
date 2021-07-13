@@ -2,6 +2,9 @@
 **ARpeggio** is an Augmented Reality Application that displays notes on piano keys and aims to help paino students to learn songs.
 It was created during the project phase of the lecture *Erweiterte Realität / Augmented Reality (IN2018)* at TUM by [@miruna20](https://github.com/miruna20), [@B1RO](https://github.com/B1RO), [@tobihanl](https://github.com/tobihanl) and [@goldst](https://github.com/goldst).
 
+## Project status
+This project should be seen more as a proof of concept than an actual program to teach students. The current features include displaying information on white keys in an area that is delimited by two markers on C notes. Black key support is implemented partially, but is not functional yet.
+
 ## External libraries and references
 Name | Notes | License
 -----|-------|--------
