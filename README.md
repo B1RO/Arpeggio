@@ -18,4 +18,4 @@ Name | Notes | License
 
 
 ## License
-Licensed under the MIT Licese. See [LICENSE](LICENSE) for more details.
+Licensed under the MIT License. See [LICENSE](LICENSE) for more details.
