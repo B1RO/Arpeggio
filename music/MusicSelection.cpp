@@ -27,27 +27,24 @@ namespace music {
                  << (i == 0 && j == 1 ? ">" : " ")
                  << "2. C Major" << endl << endl
 
-                 << (i == 1 && j == 0 ? ">" : " ")
-                 << "3. C Blues                  "
+                 << "                             "
                  << (i == 1 && j == 1 ? ">" : " ")
-                 << "4. C Blues" << endl << endl
+                 << "3. C Blues" << endl << endl
 
-                 << (i == 2 && j == 0 ? ">" : " ")
-                 << "5. Der Mond ist aufgegangen "
+                 << "                             "
                  << (i == 2 && j == 1 ? ">" : " ")
-                 << "6. Der Mond ist aufgegangen" << endl
+                 << "4. Der Mond ist aufgegangen" << endl
         
-                 << "    (MIDI)                       (MIDI)" << endl << endl
+                 << "                                 (MIDI)" << endl << endl
 
                  << "                             "
                  << (i == 3 && j == 1 ? ">" : " ")
-                 << "7. Bach - Bereite dich Zion" << endl
-
+                 << "5. Bach - Bereite dich Zion" << endl
                  << "                                 (MIDI)" << endl << endl
 
                  << "                             "
                  << (i == 4 && j == 1 ? ">" : " ")
-                 << "8. Pitch Detection" << endl
+                 << "6. Pitch Detection" << endl
                  << "                                 (Mic)" << endl;
 
             
@@ -95,17 +92,13 @@ namespace music {
                 case '2':
                     return make_tuple(new CDur(), true);
                 case '3':
-                    return make_tuple(new CBlues(), false);
-                case '4':
                     return make_tuple(new CBlues(), true);
-                case '5':
-                    return make_tuple(new Midi("../example_mond.mid"), false);
-                case '6':
+                case '4':
                     return make_tuple(new Midi("../example_mond.mid"), true);
-                case '7':
+                case '5':
                     return make_tuple(new Midi("../example_bach.mid"), true);
                 // uncomment the lines below to include MicPitchParser.
-                //case '8':
+                // case '6':
                     //return make_tuple(new MicPitchParser(), true);
             }
         }
