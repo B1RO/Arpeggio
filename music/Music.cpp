@@ -6,6 +6,8 @@ namespace music {
     }
 
     Pitch nearest_pitch_from_frequency(frequency f, frequency baseFrequency) {
+        // the fmax and fmin functions make sure that the number is actually in the enum.
+        // otherwise, this is just frequency_from_pitch, inverted.
         return (Pitch) fmax(
             21,
             fmin(
@@ -16,7 +18,8 @@ namespace music {
     }
 
     bool isBlackKey(Pitch p) {
-        int k = (int)p % 12;
+        int k = (int)p % 12; // using this, all C are 0, C# are 1, ...
+        // C#     || D#     || F#     || G#     || A#
         if(k == 1 || k == 3 || k == 6 || k == 8 || k == 10) {
             return true;
         } else {

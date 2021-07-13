@@ -9,8 +9,7 @@ namespace music {
     class CBlues : public ContinuousMusic {
     public:
         /**
-         * The notes of the C blues scale. Starts with all at once,
-         * then ordered upwards and downwards
+         * The notes of the C blues scale. Goes upwards and then downwards
          */
         vector<Note> notes();
     };

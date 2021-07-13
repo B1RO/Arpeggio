@@ -3,7 +3,8 @@
 #include "./CDur.h"
 #include "./CBlues.h"
 #include "./Midi.h"
-//#include "./MicPitchParser.h"
+// uncomment the line below to include MicPitchParser. You will also need to add it to your CMake.
+// #include "./MicPitchParser.h"
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32) && !defined(__CYGWIN__)
     #include <stdio.h>
 #else
@@ -19,8 +20,8 @@ namespace music {
 
         while(true) {
             system("clear");
-            cout << "    BEGINNER                     INTERMEDIATE" << endl
-                 << "    --------                     ------------" << endl << endl
+            cout << "    BEGINNER                     ADVANCED" << endl
+                 << "    --------                     --------" << endl << endl
                  << (i == 0 && j == 0 ? ">" : " ")
                  << "1. C Major                  "
                  << (i == 0 && j == 1 ? ">" : " ")
@@ -59,6 +60,8 @@ namespace music {
             #endif
             
             switch(c) {
+                // On linux, ABCD cases allow to navigate using arrow keys.
+                // On windows, the user shall enter the number, followed by enter key.
                 case 'A':
                     i = (i-1)%8;
                     break;
@@ -83,9 +86,10 @@ namespace music {
                     } else if(i == 3) {
                         m = new Midi("../example_bach.mid");
                     } else if(i == 4) {
-                      //  m = new MicPitchParser();
+                        // uncomment the line below to include MicPitchParser
+                        // m = new MicPitchParser();
                     }
-                    return make_tuple(m, i == 0 ? false : true);
+                    return make_tuple(m, i != 0);
                 case '1':
                     return make_tuple(new CDur(), false);
                 case '2':
@@ -100,6 +104,7 @@ namespace music {
                     return make_tuple(new Midi("../example_mond.mid"), true);
                 case '7':
                     return make_tuple(new Midi("../example_bach.mid"), true);
+                // uncomment the lines below to include MicPitchParser.
                 //case '8':
                     //return make_tuple(new MicPitchParser(), true);
             }

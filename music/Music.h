@@ -9,8 +9,8 @@ using namespace std;
 namespace music {
 
     /**
-   * Pitch in Hz
-   */
+    * Pitch in Hz
+    */
     typedef double frequency;
 
     /**

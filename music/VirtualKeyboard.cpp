@@ -5,6 +5,13 @@
 
 using namespace std;
 
+
+/**
+ * Class to display all notes that were returned by a music class / notes method.
+ * This class isn't in use in the program anymore, but can be useful for debugging.
+ * It won't work with music classes that add notes at a later point in time though,
+ * because it only calls notes() once
+ */
 class VirtualKeyboard {
 public:
     VirtualKeyboard() {
